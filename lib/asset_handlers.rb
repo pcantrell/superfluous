@@ -25,8 +25,8 @@ module AssetHandler
       @template = template_class.new(path) { content }
     end
 
-    def render(props)
-      @template.render(Object.new, props)
+    def render(scope:, props:)
+      @template.render(scope, props)
     end
   end
 
@@ -36,7 +36,7 @@ module AssetHandler
       @setup = path.read  # The entire file is the setup; it returns the content
     end
 
-    def render(props)
+    def render(scope:, props:)
       props[:content] or raise "Script #{@path} must return/yield a hash with a `content` key"
     end
   end
@@ -47,7 +47,7 @@ module AssetHandler
       @content = path.read
     end
 
-    def render(props)
+    def render(scope:, props:)
       @content
     end
 

@@ -34,10 +34,10 @@ def process_item(path, data)
   handler = AssetHandler.for(path)
   path_has_props = path.basename.to_s !~ PROP_IN_FILENAME
 
-  content = eval_setup(handler.setup, data, singleton: path_has_props) do |props|
+  content = eval_setup(handler.setup, data, singleton: path_has_props) do |scope:, props:|
     props.freeze
     yield(
-      content: handler.render(props),
+      content: handler.render(scope:, props:),
       props: props,
       strip_ext: handler.strip_ext?
     )
@@ -48,10 +48,21 @@ rescue => e
 end
 
 def eval_setup(setup_code, data, singleton:, &block)
-  result = binding.eval(setup_code) do |props|
-    raise "cannot yield from singleton item template" if singleton
-    yield({ data: data }.merge(props))
+  # Create scope for defs in setup code
+  scope_class = Class.new do
+    def make_setup_script_binding(data)
+      binding
+    end
   end
+  scope = scope_class.new
+
+  # Create binding where defs apply to scope, with appropriate block for yields from setup
+  scope_binding = scope.make_setup_script_binding(data) do |props|
+    raise "cannot yield from singleton item template" if singleton
+    yield(scope:, props: { data: data }.merge(props))
+  end
+
+  result = scope_binding.eval(setup_code)
 
   if singleton
     result = if result.respond_to?(:to_h)
@@ -59,6 +70,6 @@ def eval_setup(setup_code, data, singleton:, &block)
     else
       {}
     end
-    yield({ data: data }.merge(result))
+    yield(scope:, props: { data: data }.merge(result))
   end
 end
