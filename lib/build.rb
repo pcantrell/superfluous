@@ -1,10 +1,11 @@
 require_relative "data"
-require_relative "pages"
+require_relative "site"
 require 'awesome_print'
 
-site_dir = Pathname.new(ARGV[0])
+project_dir = Pathname.new(ARGV[0])
+src_dir = project_dir + "src"
 
-data = read_data(site_dir + "data")
+data = read_data(src_dir + "data")
 
 puts
 puts "──────────────────────── Data ────────────────────────"
@@ -14,7 +15,7 @@ puts
 puts "──────────────────────────────────────────────────────"
 puts
 
-process_pages(
-  pages_dir: site_dir + "pages",
+process_site(
+  site_dir: src_dir + "site",
   data: data,
-  output_dir: site_dir + "output")
+  output_dir: project_dir + "output")

@@ -3,17 +3,17 @@ require_relative 'asset_handlers'
 
 PROP_IN_FILENAME = /\[(.*)\]/
 
-def process_pages(pages_dir:, data:, output_dir:)
+def process_site(site_dir:, data:, output_dir:)
   output_dir.rmtree
   output_dir.mkdir
 
-  Pathname.glob("**/*", base: pages_dir) do |relative_path|
-    full_path = pages_dir + relative_path
+  Pathname.glob("**/*", base: site_dir) do |relative_path|
+    full_path = site_dir + relative_path
     next if full_path.directory?
     
     puts relative_path
 
-    process_page(full_path, data) do |props:, content:, strip_ext:|
+    process_item(full_path, data) do |props:, content:, strip_ext:|
       out_path = relative_path
       out_path = out_path.sub_ext("") if strip_ext
       out_path = out_path.parent + out_path.basename.to_s.gsub(PROP_IN_FILENAME) do
@@ -27,14 +27,14 @@ def process_pages(pages_dir:, data:, output_dir:)
   end
 end
 
-def process_page(path, data)
+def process_item(path, data)
   original_path = path
   props = {}
   
   handler = AssetHandler.for(path)
   path_has_props = path.basename.to_s !~ PROP_IN_FILENAME
 
-  content = eval_setup(handler.setup, data, singleton_page: path_has_props) do |props|
+  content = eval_setup(handler.setup, data, singleton: path_has_props) do |props|
     props.freeze
     yield(
       content: handler.render(props),
@@ -47,13 +47,13 @@ rescue => e
   raise
 end
 
-def eval_setup(setup_code, data, singleton_page:, &block)
+def eval_setup(setup_code, data, singleton:, &block)
   result = binding.eval(setup_code) do |props|
-    raise "cannot yield from singleton page template" if singleton_page
+    raise "cannot yield from singleton item template" if singleton
     yield({ data: data }.merge(props))
   end
 
-  if singleton_page
+  if singleton
     result = if result.respond_to?(:to_h)
       result.to_h
     else
