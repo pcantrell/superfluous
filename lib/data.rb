@@ -5,24 +5,43 @@ require 'yaml'
 require 'kramdown'
 require 'front_matter_parser'
 
+def merge(data, key, new_data)
+  unless existing_data = data[key]
+    data[key] = new_data  # TODO: handle existing nil value? or not?
+    return
+  end
+
+  unless existing_data.is_a?(OpenStruct) && new_data.is_a?(OpenStruct)
+    raise "Cannot merge data for #{key}:" +
+      " existing data is #{existing_data.class} " +
+      " but new data is #{new_data.class}"
+  end
+
+  new_data.each_pair do |child_key, child_value|
+    merge(existing_data, child_key, child_value)
+  end
+end
+
 def read_data(dir)
   raise "Data directory #{dir.to_s} is not a directory" unless dir.directory?
 
-  data = {}
+  data = OpenStruct.new
 
   dir.each_child do |child|
     child_name = child.basename.to_s
     next if child_name =~ /^\./
 
-    # TODO: conflicting keys, merge or error?
     if child.directory?
-      data[child_name] = read_data(child)
+      new_data = read_data(child)
     else
-      data[child.basename.sub_ext("").to_s] = parse_file(child)
+      child_name.sub!(/\.[^\.]+$/, "")
+      new_data = wrap_data(parse_file(child))
     end
+
+    merge(data, child_name, new_data)
   end
 
-  wrap_data(data)
+  data
 end
 
 def wrap_data(data)
@@ -33,9 +52,8 @@ def wrap_data(data)
         result[key] = wrap_data(value)
       end
       result
-    when Array
-      data.map { |e| wrap_data(e) }
     else
+      data.freeze if data.respond_to?(:freeze)
       data
   end
 end
@@ -53,7 +71,6 @@ def parse_file(file)
         content: Kramdown::Document.new(parts.content).to_html
       }
     else
-      raise "Unknown data file extension #{file.extname} for #{file.to_s}"
+      file
   end
 end
-
