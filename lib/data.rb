@@ -5,23 +5,6 @@ require 'yaml'
 require 'kramdown'
 require 'front_matter_parser'
 
-def merge(data, key, new_data)
-  unless existing_data = data[key]
-    data[key] = new_data  # TODO: handle existing nil value? or not?
-    return
-  end
-
-  unless existing_data.is_a?(OpenStruct) && new_data.is_a?(OpenStruct)
-    raise "Cannot merge data for #{key}:" +
-      " existing data is #{existing_data.class} " +
-      " but new data is #{new_data.class}"
-  end
-
-  new_data.each_pair do |child_key, child_value|
-    merge(existing_data, child_key, child_value)
-  end
-end
-
 def read_data(dir)
   raise "Data directory #{dir.to_s} is not a directory" unless dir.directory?
 
@@ -44,20 +27,6 @@ def read_data(dir)
   data
 end
 
-def wrap_data(data)
-  case data
-    when Hash
-      result = OpenStruct.new
-      data.each do |key, value|
-        result[key] = wrap_data(value)
-      end
-      result
-    else
-      data.freeze if data.respond_to?(:freeze)
-      data
-  end
-end
-
 def parse_file(file)
   case file.extname
     when ".json"
@@ -72,5 +41,36 @@ def parse_file(file)
       }
     else
       file
+  end
+end
+
+def merge(data, key, new_data)
+  unless existing_data = data[key]
+    data[key] = new_data  # TODO: handle existing nil value? or not?
+    return
+  end
+
+  unless existing_data.is_a?(OpenStruct) && new_data.is_a?(OpenStruct)
+    raise "Cannot merge data for #{key}:" +
+      " existing data is #{existing_data.class} " +
+      " but new data is #{new_data.class}"
+  end
+
+  new_data.each_pair do |child_key, child_value|
+    merge(existing_data, child_key, child_value)
+  end
+end
+
+def wrap_data(data)
+  case data
+    when Hash
+      result = OpenStruct.new
+      data.each do |key, value|
+        result[key] = wrap_data(value)
+      end
+      result
+    else
+      data.freeze if data.respond_to?(:freeze)
+      data
   end
 end
