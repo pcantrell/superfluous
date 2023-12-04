@@ -1,5 +1,4 @@
 require 'ostruct'
-
 require 'json'
 require 'yaml'
 require 'kramdown'
@@ -11,6 +10,7 @@ def read_data(dir)
   data = OpenStruct.new
 
   dir.each_child do |child|
+    log child
     child_name = child.basename.to_s
     next if child_name =~ /^\./
 

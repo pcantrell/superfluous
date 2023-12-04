@@ -11,7 +11,7 @@ def process_site(site_dir:, data:, output_dir:)
     full_path = site_dir + relative_path
     next if full_path.directory?
     
-    puts relative_path
+    log relative_path
 
     process_item(full_path, data) do |props:, content:, strip_ext:|
       out_path = relative_path
@@ -43,7 +43,7 @@ def process_item(path, data)
     )
   end
 rescue => e
-  puts "ERROR while processing #{path}"
+  log "ERROR while processing #{path}"
   raise
 end
 
