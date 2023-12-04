@@ -11,13 +11,15 @@ log_timing("Building", "Build completed") do
     read_data(src_dir + "data")
   end
 
-  log
-  log "──────────────────────── Data ────────────────────────"
-  log_indented do
-    log data.ai(indent: -2, ruby19_syntax: true)
+  if ENV['dump_data']
+    log
+    log "──────────────────────── Data ────────────────────────"
+    log_indented do
+      log data.ai(indent: -2, ruby19_syntax: true)
+    end
+    log "──────────────────────────────────────────────────────"
+    log
   end
-  log "──────────────────────────────────────────────────────"
-  log
 
   log_timing("Processing site", "Processed site") do
     process_site(

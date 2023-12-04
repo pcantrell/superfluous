@@ -11,17 +11,21 @@ def read_data(dir)
 
   dir.each_child do |child|
     log child
-    child_name = child.basename.to_s
-    next if child_name =~ /^\./
+    child_key = child.basename.to_s
+    next if child_key =~ /^\./
 
     if child.directory?
       new_data = read_data(child)
     else
-      child_name.sub!(/\.[^\.]+$/, "")
+      child_key.sub!(/\.[^\.]+$/, "")
       new_data = wrap_data(parse_file(child))
     end
 
-    merge(data, child_name, new_data)
+    if child_key == "_"
+      merge(data, new_data)
+    else
+      merge_child(data, child_key, new_data)
+    end
   end
 
   data
@@ -44,7 +48,7 @@ def parse_file(file)
   end
 end
 
-def merge(data, key, new_data)
+def merge_child(data, key, new_data)
   unless existing_data = data[key]
     data[key] = new_data  # TODO: handle existing nil value? or not?
     return
@@ -56,8 +60,12 @@ def merge(data, key, new_data)
       " but new data is #{new_data.class}"
   end
 
+  merge(existing_data, new_data)
+end
+
+def merge(existing_data, new_data)
   new_data.each_pair do |child_key, child_value|
-    merge(existing_data, child_key, child_value)
+    merge_child(existing_data, child_key, child_value)
   end
 end
 
