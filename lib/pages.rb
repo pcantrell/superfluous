@@ -1,4 +1,5 @@
 require 'tilt'
+require_relative 'asset_handlers'
 
 PROP_IN_FILENAME = /\[(.*)\]/
 
@@ -9,13 +10,16 @@ def process_pages(pages_dir:, data:, output_dir:)
     
     puts relative_path
 
-    process_page(full_path, data) do |rendered, props|
-      out_path = relative_path.sub_ext("")
-      out_path = out_path.parent + out_path.basename.to_s.gsub(PROP_IN_FILENAME) { props[$1.to_sym] }
+    process_page(full_path, data) do |props:, content:, strip_ext:|
+      out_path = relative_path
+      out_path = out_path.sub_ext("") if strip_ext
+      out_path = out_path.parent + out_path.basename.to_s.gsub(PROP_IN_FILENAME) do
+        props[$1.to_sym]
+      end
       outfile = output_dir + out_path
       # TODO: verify that outfile is within output_dir
       outfile.parent.mkpath
-      File.write(outfile, rendered)
+      File.write(outfile, content)
     end
   end
 end
@@ -23,57 +27,21 @@ end
 def process_page(path, data)
   original_path = path
   props = {}
-  setup, content = parse_setup(path)
   
-  # TODO: Allow chained templates, e.g. `.css.scss.erb`?
-  template_class = Tilt.template_for(path) || PassThroughTemplate
-  template = template_class.new(path) { content }
+  handler = AssetHandler.for(path)
+  path_has_props = path.basename.to_s !~ PROP_IN_FILENAME
 
-  content = eval_setup(
-    setup,
-    data,
-    singleton_page: path.basename.to_s !~ PROP_IN_FILENAME
-  ) do |props|
+  content = eval_setup(handler.setup, data, singleton_page: path_has_props) do |props|
     props.freeze
-    yield(template.render(Object.new, props), props)
+    yield(
+      content: handler.render(props),
+      props: props,
+      strip_ext: handler.strip_ext?
+    )
   end
 rescue => e
   puts "ERROR while processing #{path}"
   raise
-end
-
-def parse_setup(path)
-  setup_from_file = read_setup_file(path)
-  embedded_setup, content = extract_embedded_setup(path)
-
-  if setup_from_file && embedded_setup
-    # TODO: support nested setups?
-    raise "#{path} cannot have both embedded setup and setup from a file"
-  end
-
-  [
-    setup_from_file || embedded_setup || "",
-    content
-  ]
-end
-
-def read_setup_file(path)
-  # TODO: support dir-level shared setup?
-  stripped_path = path
-  while stripped_path.extname != ""
-    stripped_path = stripped_path.sub_ext("")
-  end
-  setup_file = stripped_path.sub_ext("-setup.rb")
-  setup_file.read if setup_file.exist?
-end
-
-def extract_embedded_setup(path)
-  raw_content = path.read
-  if raw_content =~ /\A\s*--- *\n(.*?)^ *--- *\n(.*)\Z/m
-    [$1, $2]
-  else
-    [nil, raw_content]
-  end
 end
 
 def eval_setup(setup_code, data, singleton_page:, &block)
@@ -89,15 +57,5 @@ def eval_setup(setup_code, data, singleton_page:, &block)
       {}
     end
     yield({ data: data }.merge(result))
-  end
-end
-
-class PassThroughTemplate
-  def initialize(path)
-    @content = yield
-  end
-
-  def render(props)
-    @content
   end
 end
