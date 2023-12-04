@@ -4,6 +4,9 @@ require_relative 'asset_handlers'
 PROP_IN_FILENAME = /\[(.*)\]/
 
 def process_pages(pages_dir:, data:, output_dir:)
+  output_dir.rmtree
+  output_dir.mkdir
+
   Pathname.glob("**/*", base: pages_dir) do |relative_path|
     full_path = pages_dir + relative_path
     next if full_path.directory?
