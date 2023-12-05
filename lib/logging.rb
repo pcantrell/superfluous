@@ -1,6 +1,7 @@
 @log_indent_level = 0
 
 def log(message = "", newline: true)
+  @log_indent_level ||= 0  # TODO: fix indentation when logging from setup scope
   message = message.to_s
   if message.include?("\n")
     message.lines.each { |line| log(line.rstrip, newline:) }
