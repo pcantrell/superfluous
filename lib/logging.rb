@@ -1,4 +1,5 @@
 @log_indent_level = 0
+@log_indent_suppressed = false
 
 def log(message = "", newline: true)
   @log_indent_level ||= 0  # TODO: fix indentation when logging from setup scope
@@ -8,7 +9,11 @@ def log(message = "", newline: true)
     return
   end
 
-  @log_indent_level.times { print "  " }
+  unless @log_indent_suppressed
+    @log_indent_level.times { print "  " }
+  end
+  @log_indent_suppressed = !newline
+
   print message
   puts if newline
   STDOUT.flush

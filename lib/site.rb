@@ -8,10 +8,20 @@ def process_site(site_dir:, data:, output_dir:)
     context = ItemContext.new(site_dir:, item_path: relative_path, data: data)
     next if context.skip?
     
-    log context.relative_path
+    log context.relative_path, newline: false
+    out_prefix = nil
 
     process_item(context) do |props:, content:, strip_ext:|
-      output_file = output_dir + context.output_path(props:, strip_ext:)
+      output_file_relative = context.output_path(props:, strip_ext:)
+      
+      if out_prefix
+        log out_prefix, newline: false
+      else
+        out_prefix = " " * context.relative_path.to_s.size
+      end
+      log " → #{output_file_relative}"
+
+      output_file = output_dir + output_file_relative
       # TODO: verify that output_file is within output_dir
       output_file.parent.mkpath
       File.write(output_file, content)
