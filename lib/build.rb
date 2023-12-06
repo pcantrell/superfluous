@@ -50,7 +50,12 @@ class SSG
     build
 
     Listen.to(@src_dir, latency: 0.05, wait_for_delay: 0.2) do
-      build
+      begin
+        build
+      rescue => e
+        puts
+        puts e.full_message(highlight: true)
+      end
     end.start
 
     server = Adsf::Server.new(live: true, root: @output_dir)
