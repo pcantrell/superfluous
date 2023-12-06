@@ -1,11 +1,9 @@
 require 'tilt'
 require 'active_support/all'
+require 'tmpdir'
 require_relative 'asset_handlers'
 
 def process_site(site_dir:, data:, output_dir:)
-  output_dir.rmtree
-  output_dir.mkdir
-
   Pathname.glob("**/*", base: site_dir) do |relative_path|
     context = ItemContext.new(site_dir:, item_path: relative_path, data: data)
     next if context.skip?
@@ -17,6 +15,19 @@ def process_site(site_dir:, data:, output_dir:)
       # TODO: verify that output_file is within output_dir
       output_file.parent.mkpath
       File.write(output_file, content)
+    end
+  end
+end
+
+def process_site_clean(output_dir:, **kwargs)
+  Dir.mktmpdir do |work_dir|
+    work_dir = Pathname.new(work_dir)
+
+    process_site(output_dir: work_dir, **kwargs)
+
+    Dir.mktmpdir do |old_output|
+      FileUtils.mv output_dir.children, old_output
+      FileUtils.mv work_dir.children, output_dir
     end
   end
 end
