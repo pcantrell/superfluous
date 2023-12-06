@@ -22,26 +22,50 @@ module Superfluous
         context = ItemContext.new(build: self, site_dir:, item_path: relative_path, data:)
         next if context.skip?
         
-        @logger.log context.relative_path, newline: false
-        out_prefix = nil
+        log_file_processing(context) do |log_output_file:|
+          process_item(context) do |props:, content:, strip_ext:|  # Block receives processed content
+            output_file_relative = context.output_path(props:, strip_ext:)
+            log_output_file.call(output_file_relative)
 
-        process_item(context) do |props:, content:, strip_ext:|  # Block receives processed content
-          output_file_relative = context.output_path(props:, strip_ext:)
-          
-          if out_prefix
-            @logger.log out_prefix, newline: false
-          else
-            out_prefix = " " * context.relative_path.to_s.size
+            output_file = output_dir + output_file_relative
+            # TODO: verify that output_file is within output_dir
+            output_file.parent.mkpath
+            File.write(output_file, content)
           end
-          @logger.log " → #{output_file_relative}"
-
-          output_file = output_dir + output_file_relative
-          # TODO: verify that output_file is within output_dir
-          output_file.parent.mkpath
-          File.write(output_file, content)
         end
       end
     end
+
+  private
+
+    def log_file_processing(context)
+      @logger.log context.relative_path, newline: false
+      subsequent_line_prefix = nil
+      output_count = 0
+
+      yield(
+        log_output_file: Proc.new do |output_file_relative|
+          if output_count == 0 || @logger.verbose
+            if subsequent_line_prefix
+              @logger.log subsequent_line_prefix, newline: false
+            else
+              subsequent_line_prefix = " " * context.relative_path.to_s.size
+            end
+          end
+          @logger.log " → #{output_file_relative}", temporary: !@logger.verbose
+          output_count += 1
+        end
+      )
+
+      if !@logger.verbose
+        @logger.make_last_temporary_permanent
+        if output_count > 1
+          @logger.log "#{subsequent_line_prefix} → …#{output_count - 1} more…"
+        end
+      end
+    end
+
+  public
 
     # Renders a new version of the site to a tmp dir, then quickly swaps out the out contents of the
     # output dir with the completed results.
@@ -67,7 +91,7 @@ module Superfluous
         props.freeze
         yield(
           content: handler.render(scope:, props:, nested_content:),
-          props: props,
+          props:,
           strip_ext: handler.strip_ext?
         )
       end
@@ -172,7 +196,7 @@ module Superfluous
             @context.build.process_item(
               partial_context,
               props:,
-              nested_content: nested_content
+              nested_content:
             ) do |content:, props:, strip_ext:|
               result = content.html_safe
             end
@@ -200,7 +224,7 @@ module Superfluous
 
       if setup_code.nil?
         # No setup code; props go to template unmodified
-        yield(scope: template_scope, props: props)
+        yield(scope: template_scope, props:)
       else
         # Setup code present
 

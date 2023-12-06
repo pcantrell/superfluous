@@ -5,22 +5,34 @@ module Superfluous
       @log_indent_suppressed = false
     end
 
-    def log(message = "", newline: true)
-      @log_indent_level ||= 0  # TODO: fix indentation when logging from setup scope
+    attr_accessor :verbose
+
+    def log(message = "", newline: true, temporary: false)
       message = message.to_s
       if message.include?("\n")
-        message.lines.each { |line| log(line.rstrip, newline:) }
+        message.lines.each { |line| log(line.rstrip, newline:, temporary:) }
         return
       end
+
+      print "\eD\eD\eM\eM\e7" if temporary  # scroll window to pre-clear space, then save cursor
+      print "\e[K"  # clear to EOL
 
       unless @log_indent_suppressed
         @log_indent_level.times { print "  " }
       end
-      @log_indent_suppressed = !newline
+      @log_indent_suppressed = !newline unless temporary
 
       print message
       puts if newline
+
+      print "\e8" if temporary  # restore cursor
+
       STDOUT.flush
+    end
+
+    def make_last_temporary_permanent
+      puts
+      @log_indent_suppressed = false
     end
 
     def log_indented

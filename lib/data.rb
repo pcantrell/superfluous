@@ -11,16 +11,20 @@ module Superfluous
 
       data = OpenStruct.new
 
+      file_count = 0
       dir.each_child do |child|
-        logger.log child
+        logger.log child, temporary: !logger.verbose
+
         child_key = child.basename.to_s
         next if child_key =~ /^\./
 
         if child.directory?
-          new_data = read(child, logger:)
+          new_data, sub_file_count = read(child, logger:)
+          file_count += sub_file_count
         else
           child_key.sub!(/\.[^\.]+$/, "")
           new_data = wrap(parse_file(child))
+          file_count += 1
         end
 
         if child_key == "_"
@@ -30,7 +34,7 @@ module Superfluous
         end
       end
 
-      data
+      [data, file_count]
     end
 
     def self.parse_file(file)

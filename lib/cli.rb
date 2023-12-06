@@ -5,8 +5,10 @@ require 'awesome_print'
 
 module Superfluous
   class CLI
-    def initialize(project_dir:, live: false)
+    def initialize(project_dir:, live: false, verbose: false)
       @logger = Logger.new
+      @logger.verbose = verbose
+
       @project_dir = Pathname.new(project_dir)
       @src_dir = @project_dir + "src"
       @output_dir = @project_dir + "output"
@@ -22,7 +24,9 @@ module Superfluous
       @logger.log_timing("Building", "Build completed") do
 
         data = @logger.log_timing("Reading data", "Read data") do
-          Superfluous::Data.read(@src_dir + "data", logger: @logger)
+          data, file_count = Superfluous::Data.read(@src_dir + "data", logger: @logger)
+          @logger.log "Parsed #{file_count} data files"
+          data
         end
 
         if ENV['dump_data']
@@ -38,8 +42,8 @@ module Superfluous
         @logger.log_timing("Processing site", "Processed site") do
           build = SiteBuild.new(logger: @logger)
           build.process_site_clean(
+            data:,
             site_dir: @src_dir + "site",
-            data: data,
             output_dir: @output_dir)
         end
       end
@@ -71,4 +75,5 @@ module Superfluous
 end
 
 live = !!ARGV.delete("--live")
-Superfluous::CLI.new(project_dir: ARGV[0], live: live)
+verbose = !!ARGV.delete("--verbose")
+Superfluous::CLI.new(project_dir: ARGV[0], live:, verbose:)
