@@ -1,11 +1,18 @@
 module AssetHandler
-  def self.for(path)
-    if path.extname == ".rb"
-      AssetHandler::Script.new(path)
-    elsif tilt_template_class = ::Tilt.template_for(path)
-      AssetHandler::Tilt.new(tilt_template_class, path)
-    else
-      AssetHandler::PassThrough.new(path)
+  class Cache
+    def initialize
+      @handler_cache = {}
+    end
+
+    def for(path)
+      @handler_cache[path] ||=
+        if path.extname == ".rb"
+          AssetHandler::Script.new(path)
+        elsif tilt_template_class = ::Tilt.template_for(path)
+          AssetHandler::Tilt.new(tilt_template_class, path)
+        else
+          AssetHandler::PassThrough.new(path)
+        end
     end
   end
 
