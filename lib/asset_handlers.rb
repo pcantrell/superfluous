@@ -10,9 +10,7 @@ module AssetHandler
   end
 
   class Base
-    def setup
-      @setup || ""
-    end
+    attr_reader :setup
 
     def strip_ext?
       true
@@ -25,8 +23,13 @@ module AssetHandler
       @template = template_class.new(path) { content }
     end
 
-    def render(scope:, props:)
-      @template.render(scope, props)
+    def render(scope:, props:, nested_content:)
+      @template.render(scope, props) do
+        if nested_content.nil?
+          raise "Template called yield, but no nested content given"
+        end
+        nested_content.call.html_safe
+      end
     end
   end
 
@@ -36,7 +39,7 @@ module AssetHandler
       @setup = path.read  # The entire file is the setup; it returns the content
     end
 
-    def render(scope:, props:)
+    def render(scope:, props:, nested_content:)
       props[:content] or raise "Script #{@path} must return/yield a hash with a `content` key"
     end
   end
@@ -47,7 +50,7 @@ module AssetHandler
       @content = path.read
     end
 
-    def render(scope:, props:)
+    def render(scope:, props:, nested_content:)
       @content
     end
 

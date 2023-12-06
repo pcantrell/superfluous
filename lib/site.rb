@@ -21,14 +21,14 @@ def process_site(site_dir:, data:, output_dir:)
   end
 end
 
-def process_item(context, props: {})
+def process_item(context, props: {}, nested_content: nil)
   props = { data: context.data }.merge(props)
   handler = AssetHandler.for(context.full_path)
 
   content = eval_setup(handler.setup, context, props) do |scope:, props:|
     props.freeze
     yield(
-      content: handler.render(scope:, props:),
+      content: handler.render(scope:, props:, nested_content:),
       props: props,
       strip_ext: handler.strip_ext?
     )
@@ -97,9 +97,11 @@ class RenderingScope
   def initialize(context)
     @context = context
   end
+end
 
-  # Render a partial
-  def render(partial, **props, &block)
+module TemplateHelpers
+  # Render a partial. Overrides render during template processing.
+  def render(partial, **props, &nested_content)
     @context.search_paths.each do |search_path|
       found_path = nil
       search_path.glob("_#{partial}.*") do |path|
@@ -113,8 +115,7 @@ class RenderingScope
         end
 
         result = nil
-        # How to pass block to render??
-        process_item(partial_context, props:) do |content:, props:, strip_ext:|
+        process_item(partial_context, props:, nested_content: nested_content) do |content:, props:, strip_ext:|
           result = content.html_safe
         end
         return result
@@ -127,32 +128,41 @@ end
 
 def eval_setup(setup_code, context, props, &block)
   # Create scope for prop usage and helps defs in setup code
-  scope_class = Class.new(RenderingScope) do
+  setup_scope_class = Class.new(RenderingScope) do
     def make_setup_script_binding
       binding
     end
   end
-  scope = scope_class.new(context)
+  setup_scope = setup_scope_class.new(context)
 
-  # Create binding where evaled code will execute in our new scope.
-  scope_binding = scope.make_setup_script_binding do |props_from_setup|
-    # Confusingly, this block here does not execute immediately; it is the block that `yield`s in
-    # the setup code will call.
-    raise "cannot yield from singleton item template" if context.singleton?
-    yield(scope:, props: props.merge(props_from_setup))
-  end
-  props.each do |k,v|
-    scope_binding.local_variable_set(k, v)
-  end
+  template_scope = Class.new(setup_scope_class) do
+    include TemplateHelpers
+  end.new(context)
 
-  result = scope_binding.eval(setup_code)
+  if setup_code.nil?
+    # No setup code; props go to template unmodified
+    yield(scope: template_scope, props: props)
+  else
+    # Setup code present
 
-  if context.singleton?
-    props_from_setup = if Hash === result
-      result
-    else
-      {}
+    # Create binding where evaled code will execute in our new scope.
+    setup_scope_binding = setup_scope.make_setup_script_binding
+    props.each do |k,v|
+      setup_scope_binding.local_variable_set(k, v)
     end
-    yield(scope:, props: props.merge(props_from_setup))
+
+    render_count = 0
+    setup_scope_class.define_method(:render) do |**props_from_setup|
+      render_count += 1
+      if context.singleton? && render_count > 1
+        raise "Singleton item setup attempted to call render() multiple times: #{@context.full_path}"
+      end
+      yield(scope: template_scope, props: props.merge(props_from_setup))
+    end
+    setup_scope_binding.eval(setup_code)
+
+    if context.singleton? && render_count != 1
+      raise "Singleton item setup must call render() exactly once: #{@context.full_path}"
+    end
   end
 end
