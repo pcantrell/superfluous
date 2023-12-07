@@ -65,6 +65,13 @@ module Superfluous
         end
       end.start
 
+      Listen.to(Pathname.new(__dir__).parent) do
+        puts
+        puts "Superfluous gem modified; relaunching..."
+        puts
+        exec("ruby", __FILE__, *ARGV)
+      end.start
+
       server = Adsf::Server.new(live: true, root: @output_dir)
       %w[INT TERM].each do |s|
         Signal.trap(s) { server.stop }
@@ -74,6 +81,7 @@ module Superfluous
   end
 end
 
-live = !!ARGV.delete("--live")
-verbose = !!ARGV.delete("--verbose")
-Superfluous::CLI.new(project_dir: ARGV[0], live:, verbose:)
+args = ARGV.dup  # Save ARGV for self-relaunch
+live = !!args.delete("--live")
+verbose = !!args.delete("--verbose")
+Superfluous::CLI.new(project_dir: args[0], live:, verbose:)
