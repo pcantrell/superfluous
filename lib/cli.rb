@@ -54,15 +54,10 @@ module Superfluous
       require 'adsf/live'
       require 'listen'
 
-      build
+      build_guarded
 
       Listen.to(@src_dir, latency: 0.05, wait_for_delay: 0.2) do
-        begin
-          build
-        rescue => e
-          puts
-          puts e.full_message(highlight: true)
-        end
+        build_guarded
       end.start
 
       Listen.to(Pathname.new(__dir__).parent) do
@@ -77,6 +72,19 @@ module Superfluous
         Signal.trap(s) { server.stop }
       end
       server.run
+    end
+
+    def build_guarded
+      begin
+        puts
+        build
+        puts
+      rescue SystemExit, Interrupt
+        raise
+      rescue Exception => e
+        puts
+        puts e.full_message(highlight: true)
+      end
     end
   end
 end
