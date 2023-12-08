@@ -5,6 +5,13 @@ require 'awesome_print'
 
 module Superfluous
   class CLI
+    def self.run(args)
+      args = args.dup  # Save ARGV for self-relaunch
+      live = !!args.delete("--live")
+      verbose = !!args.delete("--verbose")
+      Superfluous::CLI.new(project_dir: args[0], live:, verbose:)
+    end
+
     def initialize(project_dir:, live: false, verbose: false)
       @logger = Logger.new
       @logger.verbose = verbose
@@ -88,8 +95,3 @@ module Superfluous
     end
   end
 end
-
-args = ARGV.dup  # Save ARGV for self-relaunch
-live = !!args.delete("--live")
-verbose = !!args.delete("--verbose")
-Superfluous::CLI.new(project_dir: args[0], live:, verbose:)
