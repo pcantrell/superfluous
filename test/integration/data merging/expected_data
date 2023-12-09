@@ -1,4 +1,16 @@
-0 files
+6 files
 
 (OpenStruct) {
+  subdir: (OpenStruct) {
+    foo: (OpenStruct) {
+      bar: (OpenStruct) {
+        from_nested_self: (String) "wassup"
+        from_subdir_yaml: (String) "heya"
+        from_root_json: (String) "ahoy!"
+      }
+    }
+  }
+  json_self_prop: (String) "foo"
+  haml_self_prop: (Integer) 700
+  raw_file: (Pathname) "<project_dir>/data merging/data/raw_file.txt"
 }

@@ -4,7 +4,9 @@ require 'diffy'
 require_relative '../lib/cli.rb'
 
 class IntegrationTest < Minitest::Test
-  (Pathname.new(__dir__) + "integration").each_child do |test_dir|
+  TESTS_DIR = Pathname.new(__dir__) + "integration"
+
+  TESTS_DIR.each_child do |test_dir|
     next if test_dir.basename.to_s.start_with?(".")
 
     define_method("test_#{test_dir.basename}") do
@@ -34,17 +36,18 @@ private
           result << "#{indent}  #{key}: "
           result << format_data(value, indent + "  ")
         end
-        result << indent + "}\n"
+        result << indent << "}\n"
       when Array
         result << "[\n"
         data.each do |elem|
           result << indent + "  "
           result << format_data(elem, indent + "  ")
         end
-        result << indent + "]\n"
+        result << indent << "]\n"
+      when Pathname
+        result << data.to_s.gsub(TESTS_DIR.to_s, "<project_dir>").inspect << "\n"
       else
-        result << data.inspect
-        result << "\n"
+        result << data.inspect << "\n"
     end
     result
   end
@@ -72,11 +75,11 @@ private
   end
 
   def assert_file_equal(expected, actual)
-    begin
-      expected_data = expected.read
-      actual_data = actual.read
+    expected_data = expected.read
+    actual_data = actual.read
+    if [expected_data, actual_data].all?(&:valid_encoding?)  # TODO: implement better binary file detection
       assert_text_equal(expected_data, actual_data)
-    rescue Encoding::CompatibilityError  # TODO: implement better binary file detection
+    else
       assert_equal(expected.binread, actual.binread)
     end
   rescue => e

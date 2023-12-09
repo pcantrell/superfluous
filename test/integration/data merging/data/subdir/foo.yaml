@@ -1,0 +1,2 @@
+bar:
+ from_subdir_yaml: "heya"
