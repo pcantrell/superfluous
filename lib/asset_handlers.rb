@@ -17,7 +17,7 @@ module AssetHandler
   end
 
   class Base
-    attr_reader :setup
+    attr_reader :script
 
     def strip_ext?
       true
@@ -26,7 +26,7 @@ module AssetHandler
 
   class Tilt < AssetHandler::Base
     def initialize(template_class, path)
-      @setup, content = AssetHandler.parse_setup(path)
+      @script, content = AssetHandler.read_script(path)
       @template = template_class.new(path) { content }
     end
 
@@ -43,7 +43,7 @@ module AssetHandler
   class Script < AssetHandler::Base
     def initialize(path)
       @path = path
-      @setup = path.read  # The entire file is the setup; it returns the content
+      @script = path.read  # The entire file is the script; it returns the content
     end
 
     def render(scope:, props:, nested_content:)
@@ -53,7 +53,7 @@ module AssetHandler
 
   class PassThrough < AssetHandler::Base
     def initialize(path)
-      @setup = AssetHandler.read_setup_file(path)
+      @script = AssetHandler.read_script_file(path)
       @content = path.read
     end
 
@@ -68,32 +68,31 @@ module AssetHandler
 
 private
 
-  def self.parse_setup(path)
-    setup_from_file = read_setup_file(path)
-    embedded_setup, content = extract_embedded_setup(path)
+  def self.read_script(path)
+    script_from_file = read_script_file(path)
+    embedded_script, content = extract_embedded_script(path)
 
-    if setup_from_file && embedded_setup
-      # TODO: support nested setups?
-      raise "#{path} cannot have both embedded setup and setup from a file"
+    if script_from_file && embedded_script
+      raise "#{path} cannot have both embedded script and *-script file"
     end
 
     [
-      setup_from_file || embedded_setup,
+      script_from_file || embedded_script,
       content
     ]
   end
 
-  def self.read_setup_file(path)
-    # TODO: support dir-level shared setup?
+  def self.read_script_file(path)
+    # TODO: support dir-level shared setup/config/context script?
     stripped_path = path
     while stripped_path.extname != ""
       stripped_path = stripped_path.sub_ext("")
     end
-    setup_file = stripped_path.sub_ext("-setup.rb")
-    setup_file.read if setup_file.exist?
+    script_file = stripped_path.sub_ext("-script.rb")
+    script_file.read if script_file.exist?
   end
 
-  def self.extract_embedded_setup(path)
+  def self.extract_embedded_script(path)
     raw_content = path.read
     if raw_content =~ /\A\s*--- *\n(.*?)^ *--- *\n(.*)\Z/m
       [$1, $2]

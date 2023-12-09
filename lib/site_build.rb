@@ -87,7 +87,7 @@ module Superfluous
       props = { data: context.data }.merge(props)
       handler = @asset_handler_cache.for(context.full_path)
 
-      content = eval_setup(handler.setup, context, props) do |scope:, props:|
+      content = eval_script(handler.script, context, props) do |scope:, props:|
         props.freeze
         yield(
           content: handler.render(scope:, props:, nested_content:),
@@ -157,10 +157,10 @@ module Superfluous
       end
     end
 
-    # Methods shared by site setup scripts and templates. Each script gets its own subclass of
+    # Methods shared by site scripts and templates. Each script gets its own subclass of
     # RenderingScope, which includes:
     #
-    # - the setup scripts’s `render` method to trigger template rendering, and
+    # - the scripts’s `render` method to trigger template rendering, and
     # - any `def`s from the script.
     #
     class RenderingScope
@@ -173,11 +173,11 @@ module Superfluous
       end
     end
 
-    # Methods available only to the template and not the setup script.
+    # Methods available only to the template and not the script.
     #
     module TemplateHelpers
-      # Note that `render` has a different meaning in templates vs setup scripts, so this overrides
-      # the `render` method that setup scripts see.
+      # Note that `render` has a different meaning in templates vs scripts, so this overrides
+      # the `render` method that scripts see.
       #
       def render(partial, **props, &nested_content)
         @context.search_paths.each do |search_path|
@@ -208,44 +208,44 @@ module Superfluous
       end
     end
 
-    def eval_setup(setup_code, context, props, &block)
-      # Create scope for prop usage and helps defs in setup code
+    def eval_script(script, context, props, &block)
+      # Create scope for prop usage and helps defs in script code
       # TODO: Create a scope class per script instead of per script eval?
-      setup_scope_class = Class.new(RenderingScope) do
-        def make_setup_script_binding
+      script_scope_class = Class.new(RenderingScope) do
+        def make_script_script_binding
           binding
         end
       end
-      setup_scope = setup_scope_class.new(context)
+      script_scope = script_scope_class.new(context)
 
-      template_scope = Class.new(setup_scope_class) do
+      template_scope = Class.new(script_scope_class) do
         include TemplateHelpers
       end.new(context)
 
-      if setup_code.nil?
-        # No setup code; props go to template unmodified
+      if script.nil?
+        # No script code; props go to template unmodified
         yield(scope: template_scope, props:)
       else
         # Setup code present
 
         # Create binding where evaled code will execute in our new scope.
-        setup_scope_binding = setup_scope.make_setup_script_binding
+        script_scope_binding = script_scope.make_script_script_binding
         props.each do |k,v|
-          setup_scope_binding.local_variable_set(k, v)
+          script_scope_binding.local_variable_set(k, v)
         end
 
         render_count = 0
-        setup_scope_class.define_method(:render) do |**props_from_setup|
+        script_scope_class.define_method(:render) do |**props_from_script|
           render_count += 1
           if context.singleton? && render_count > 1
-            raise "Singleton item setup attempted to call render() multiple times: #{@context.full_path}"
+            raise "Singleton item script attempted to call render() multiple times: #{@context.full_path}"
           end
-          yield(scope: template_scope, props: props.merge(props_from_setup))
+          yield(scope: template_scope, props: props.merge(props_from_script))
         end
-        setup_scope_binding.eval(setup_code)
+        script_scope_binding.eval(script)
 
         if context.singleton? && render_count != 1
-          raise "Singleton item setup must call render() exactly once: #{@context.full_path}"
+          raise "Singleton item script must call render() exactly once: #{@context.full_path}"
         end
       end
     end
