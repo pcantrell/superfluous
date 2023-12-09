@@ -32,7 +32,7 @@ private
     case data
       when OpenStruct
         result << "{\n"
-        data.each_pair do |key, value|
+        data.each_pair.sort.each do |key, value|
           result << "#{indent}  #{key}: "
           result << format_data(value, indent + "  ")
         end

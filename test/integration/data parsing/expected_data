@@ -1,29 +1,29 @@
-6 files
+9 files
 
 (OpenStruct) {
-  markdown: (OpenStruct) {
-    meta: (OpenStruct) {
-    }
-    content: (String) "<h1 id=\"awesome-color-names\">Awesome color names</h1>\n\n<ul>\n  <li>bistre</li>\n  <li>cinereous</li>\n  <li>eburnean</li>\n  <li>falu</li>\n  <li>fulvous</li>\n  <li>gamboge</li>\n  <li>glaucous</li>\n  <li>isabelline</li>\n  <li>lazuli</li>\n  <li>murrey</li>\n</ul>\n\n<p>But wait! There’s <em>more</em>!</p>\n\n<ul>\n  <li>nacarat</li>\n  <li>nadeshiko</li>\n  <li>pervenche</li>\n  <li>phthalocyanine</li>\n  <li>sinopia</li>\n  <li>smaragdine</li>\n  <li>verdigris</li>\n  <li>viridian</li>\n  <li>wenge</li>\n  <li>zaffre</li>\n</ul>\n"
-  }
-  yaml_bare_int: (Integer) 17
-  json_bare_string: (String) "a string"
-  json_bare_int: (Integer) 37
-  json_array: (Array) [
-    (Integer) 37
-    (String) "ahoy"
-    (Hash) {"key"=>"exciting value"}
-  ]
+  image: (Pathname) "<project_dir>/data parsing/data/image.png"
   json: (OpenStruct) {
     foo: (Array) [
       (String) "bar"
       (Integer) 17
     ]
   }
+  json_array: (Array) [
+    (Integer) 37
+    (String) "ahoy"
+    (Hash) {"key"=>"exciting value"}
+  ]
+  json_bare_int: (Integer) 37
+  json_bare_string: (String) "a string"
+  markdown: (OpenStruct) {
+    content: (String) "<h1 id=\"awesome-color-names\">Awesome color names</h1>\n\n<ul>\n  <li>bistre</li>\n  <li>cinereous</li>\n  <li>eburnean</li>\n  <li>falu</li>\n  <li>fulvous</li>\n  <li>gamboge</li>\n  <li>glaucous</li>\n  <li>isabelline</li>\n  <li>lazuli</li>\n  <li>murrey</li>\n</ul>\n\n<p>But wait! There’s <em>more</em>!</p>\n\n<ul>\n  <li>nacarat</li>\n  <li>nadeshiko</li>\n  <li>pervenche</li>\n  <li>phthalocyanine</li>\n  <li>sinopia</li>\n  <li>smaragdine</li>\n  <li>verdigris</li>\n  <li>viridian</li>\n  <li>wenge</li>\n  <li>zaffre</li>\n</ul>\n"
+    meta: (OpenStruct) {
+    }
+  }
+  plaintext: (Pathname) "<project_dir>/data parsing/data/plaintext.txt"
   yaml: (Array) [
     (Hash) {"key"=>"value", "also"=>"another value"}
     (Integer) 17
   ]
-  plaintext: (Pathname) "<project_dir>/data parsing/data/plaintext.txt"
-  image: (Pathname) "<project_dir>/data parsing/data/image.png"
+  yaml_bare_int: (Integer) 17
 }
