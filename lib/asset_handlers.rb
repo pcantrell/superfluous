@@ -5,6 +5,9 @@ module AssetHandler
     end
 
     def for(path)
+      # TODO: handle *-script.rb with no corresponding script
+      return nil if path.basename.to_s.end_with?(SCRIPT_FILE_SUFFIX)
+
       @handler_cache[path] ||=
         if path.extname == ".rb"
           AssetHandler::Script.new(path)
@@ -68,6 +71,8 @@ module AssetHandler
 
 private
 
+  SCRIPT_FILE_SUFFIX = "-script.rb"
+
   def self.read_script(path)
     script_from_file = read_script_file(path)
     embedded_script, content = extract_embedded_script(path)
@@ -88,7 +93,7 @@ private
     while stripped_path.extname != ""
       stripped_path = stripped_path.sub_ext("")
     end
-    script_file = stripped_path.sub_ext("-script.rb")
+    script_file = stripped_path.sub_ext(SCRIPT_FILE_SUFFIX)
     script_file.read if script_file.exist?
   end
 

@@ -1,0 +1,22 @@
+---
+def helper2(message)
+    "helper 2 says #{message}"
+end
+
+render
+---
+
+<%=
+begin
+  helper1("bye")
+rescue NoMethodError
+  "helper 1 not defined"
+end
+%>
+<%=
+begin
+  helper2("bye")
+rescue NoMethodError
+  "helper 2 not defined"
+end
+%>

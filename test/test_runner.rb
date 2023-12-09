@@ -89,7 +89,7 @@ private
 
   def assert_text_equal(expected, actual)
     if expected.strip != actual.strip
-      diff = Diffy::Diff.new(expected, actual).to_s(:color)
+      diff = Diffy::Diff.new(expected + "\n", actual + "\n").to_s(:color)
         .gsub(/\e\[3([12])m/) { "\e\[3#{3 - $1.to_i}m" }  # Swap red and green
       fail "Data mismatch:\n#{diff}"
     end

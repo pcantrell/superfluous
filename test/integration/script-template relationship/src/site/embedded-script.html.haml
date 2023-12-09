@@ -1,0 +1,22 @@
+---
+script_local_var = 17
+
+render(prop_from_script: "hello")
+---
+
+- script_local_var ||= "not passed from script"
+%p
+  script local var:
+  = script_local_var
+
+%p
+  prop from script:
+  = prop_from_script.inspect
+
+%p
+  data not mentioned in script:
+  %ul
+    - data.things.each_pair do |name, value|
+      %li
+        %b= name.inspect
+        = value.behavior.inspect

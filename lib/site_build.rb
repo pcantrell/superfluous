@@ -86,6 +86,7 @@ module Superfluous
     def process_item(context, props: {}, nested_content: nil)
       props = { data: context.data }.merge(props)
       handler = @asset_handler_cache.for(context.full_path)
+      return unless handler
 
       content = eval_script(handler.script, context, props) do |scope:, props:|
         props.freeze
@@ -245,7 +246,7 @@ module Superfluous
         script_scope_binding.eval(script)
 
         if context.singleton? && render_count != 1
-          raise "Singleton item script must call render() exactly once: #{@context.full_path}"
+          raise "Singleton item script must call render() exactly once: #{context.full_path}"
         end
       end
     end
