@@ -1,4 +1,4 @@
-9 files
+10 files
 
 (OpenStruct) {
   image: (Pathname) "<project_dir>/data parsing/data/image.png"
@@ -18,6 +18,13 @@
   markdown: (OpenStruct) {
     content: (String) "<h1 id=\"awesome-color-names\">Awesome color names</h1>\n\n<ul>\n  <li>bistre</li>\n  <li>cinereous</li>\n  <li>eburnean</li>\n  <li>falu</li>\n  <li>fulvous</li>\n  <li>gamboge</li>\n  <li>glaucous</li>\n  <li>isabelline</li>\n  <li>lazuli</li>\n  <li>murrey</li>\n</ul>\n\n<p>But wait! There’s <em>more</em>!</p>\n\n<ul>\n  <li>nacarat</li>\n  <li>nadeshiko</li>\n  <li>pervenche</li>\n  <li>phthalocyanine</li>\n  <li>sinopia</li>\n  <li>smaragdine</li>\n  <li>verdigris</li>\n  <li>viridian</li>\n  <li>wenge</li>\n  <li>zaffre</li>\n</ul>\n"
     meta: (OpenStruct) {
+    }
+  }
+  markdown-metadata: (OpenStruct) {
+    content: (String) "<h1 id=\"markdown-story\">Markdown Story</h1>\n\n<p>It was a dark and stormy night.</p>\n\n<p>The End</p>\n"
+    meta: (OpenStruct) {
+      title: (String) "Very Exciting Story"
+      weather: (String) "stormy"
     }
   }
   plaintext: (Pathname) "<project_dir>/data parsing/data/plaintext.txt"
