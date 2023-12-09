@@ -19,4 +19,5 @@ group :test do
   gem "guard", "~> 2.18"
   gem "guard-minitest", "~> 2.4"
   gem "diffy", "~> 3.4"
+  gem "minitest-reporters", "~> 1.6"
 end

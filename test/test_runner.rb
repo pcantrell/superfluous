@@ -1,4 +1,5 @@
 require 'minitest/autorun'
+require "minitest/reporters"
 require 'pathname'
 require 'diffy'
 require_relative '../lib/cli.rb'
@@ -106,4 +107,42 @@ private
     def make_last_temporary_permanent
     end
   end
+end
+
+
+class CustomReporter < Minitest::Reporters::DefaultReporter
+  def before_suite(suite)
+  end
+
+  def on_record(result)
+    super
+
+    test_path = result.klass.split("::")
+    test_path << result.name.gsub(/^test_/, '')
+    print " "
+    color = if result.skipped?
+      method(:yellow)
+    elsif result.failure
+      method(:red)
+    else
+      :itself
+    end
+    puts test_path.map(&color).join(blue(" · "))
+  end
+
+  def record_pass(record)
+    green("✔︎")
+  end
+
+  def record_skip(record)
+    yellow("S")
+  end
+
+  def record_failure(record)
+    red("✖︎")
+  end
+end
+
+unless ENV['RM_INFO']  # RubyMine has its own way of handling test results
+  Minitest::Reporters.use! CustomReporter.new
 end
