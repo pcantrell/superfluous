@@ -149,7 +149,12 @@ module Superfluous
         path = relative_path
         path = path.sub_ext("") if strip_ext
         path.parent + path.basename.to_s.gsub(FILENAME_PROP) do
-          props[$1.to_sym]
+          value = props[$1.to_sym]
+          if value.nil?
+            raise "Prop [#{$1}] appears in filename #{path}, but no value given;" +
+              " available props are: #{props.keys.join(', ')}"
+          end
+          value
         end
       end
 

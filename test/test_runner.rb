@@ -25,7 +25,7 @@ private
 
     expected = expected_data_file.read
     actual = "#{file_count} files\n\n" + format_data(data)
-    assert_text_equal(expected, actual)
+    assert_text_equal(expected, actual, "Data")
   end
 
   def format_data(data, indent = "")
@@ -64,9 +64,12 @@ private
 
   def assert_dirs_equal(expected_dir, actual_dir)
     expected_files, actual_files = [expected_dir, actual_dir].map do
-      |dir| Pathname.glob('**', base: dir)
+      |dir| Pathname.glob('**/*', base: dir)
     end
-    assert_text_equal expected_files.join("\n"), actual_files.join("\n")
+    assert_text_equal(
+      expected_files.join("\n"),
+      actual_files.join("\n"),
+      "Directory #{expected_dir}")
 
     expected_files.zip(actual_files).each do |expected, actual|
       assert_file_equal(
@@ -76,23 +79,23 @@ private
   end
 
   def assert_file_equal(expected, actual)
-    expected_data = expected.read
-    actual_data = actual.read
+    expected_data = expected.directory? ? "––dir––" : expected.read
+    actual_data   =   actual.directory? ? "––dir––" : actual.read
     if [expected_data, actual_data].all?(&:valid_encoding?)  # TODO: implement better binary file detection
-      assert_text_equal(expected_data, actual_data)
+      assert_text_equal(expected_data, actual_data, "File content")
     else
       assert_equal(expected.binread, actual.binread)
     end
   rescue => e
-    puts "ERROR while comparing #{expected} to #{actual}"
+    puts "ERROR while comparing:\n  #{expected}\n  #{actual}"
     raise
   end
 
-  def assert_text_equal(expected, actual)
+  def assert_text_equal(expected, actual, name)
     if expected.strip != actual.strip
       diff = Diffy::Diff.new(expected + "\n", actual + "\n").to_s(:color)
         .gsub(/\e\[3([12])m/) { "\e\[3#{3 - $1.to_i}m" }  # Swap red and green
-      fail "Data mismatch:\n#{diff}"
+      fail "#{name} mismatch:\n#{diff}"
     end
   end
 
