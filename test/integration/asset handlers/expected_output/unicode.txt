@@ -1,0 +1,5 @@
+Some high-page Unicode: 🪲🪺🪼
+
+Compound characters: L⃠ .⃞⃝⃣ 🧑🏽‍🎨
+
+High-page supplementary use character: 􀀀

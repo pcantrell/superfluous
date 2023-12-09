@@ -1,6 +1,6 @@
 guard :minitest do
-  %w(test lib).each do |subdir|
+  %w(test/ lib/ Gemfile.lock).each do |child|
     # Just rerun everything when anything changes
-    watch(%r{^#{subdir}/}) { "test/" }
+    watch(%r{^#{child}}) { "test/" }
   end
 end

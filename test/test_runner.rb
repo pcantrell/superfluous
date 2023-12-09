@@ -22,11 +22,7 @@ private
 
     expected = expected_data_file.read
     actual = "#{file_count} files\n\n" + format_data(data)
-    if expected.strip != actual.strip
-      diff = Diffy::Diff.new(expected, actual).to_s(:color)
-        .gsub(/\e\[3([12])m/) { "\e\[3#{3 - $1.to_i}m" }  # Swap red and green
-      fail "Data mismatch:\n#{diff}"
-    end
+    assert_text_equal(expected, actual)
   end
 
   def format_data(data, indent = "")
@@ -54,6 +50,46 @@ private
   end
 
   def run_output_test(project_dir, expected_output)
+    return unless expected_output.exist?
+
+    Dir.mktmpdir do |actual_output|
+      Superfluous::CLI.new(project_dir:, output_dir: actual_output, logger:)
+      assert_dirs_equal(expected_output, actual_output)
+    end
+  end
+
+  def assert_dirs_equal(expected_dir, actual_dir)
+    expected_files, actual_files = [expected_dir, actual_dir].map do
+      |dir| Pathname.glob('**', base: dir)
+    end
+    assert_text_equal expected_files.join("\n"), actual_files.join("\n")
+
+    expected_files.zip(actual_files).each do |expected, actual|
+      assert_file_equal(
+        Pathname.new(expected_dir) + expected,
+        Pathname.new(actual_dir) + actual)
+    end
+  end
+
+  def assert_file_equal(expected, actual)
+    begin
+      expected_data = expected.read
+      actual_data = actual.read
+      assert_text_equal(expected_data, actual_data)
+    rescue Encoding::CompatibilityError  # TODO: implement better binary file detection
+      assert_equal(expected.binread, actual.binread)
+    end
+  rescue => e
+    puts "ERROR while comparing #{expected} to #{actual}"
+    raise
+  end
+
+  def assert_text_equal(expected, actual)
+    if expected.strip != actual.strip
+      diff = Diffy::Diff.new(expected, actual).to_s(:color)
+        .gsub(/\e\[3([12])m/) { "\e\[3#{3 - $1.to_i}m" }  # Swap red and green
+      fail "Data mismatch:\n#{diff}"
+    end
   end
 
   def logger
@@ -62,7 +98,9 @@ private
 
   class NoopLogger < Superfluous::Logger
     def log(*args)
-      # noop
+    end
+
+    def make_last_temporary_permanent
     end
   end
 end

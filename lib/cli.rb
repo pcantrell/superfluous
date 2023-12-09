@@ -12,13 +12,18 @@ module Superfluous
       Superfluous::CLI.new(project_dir: args[0], live:, verbose:)
     end
 
-    def initialize(project_dir:, live: false, verbose: false)
-      @logger = Logger.new
+    def initialize(project_dir:, live: false, verbose: false, logger: nil, output_dir: nil)
+      @logger = logger || Logger.new
       @logger.verbose = verbose
 
       @project_dir = Pathname.new(project_dir)
       @src_dir = @project_dir + "src"
-      @output_dir = @project_dir + "output"
+      @output_dir =
+        if output_dir
+          Pathname.new(output_dir)
+        else
+          @project_dir + "output"
+        end
 
       if live
         live_serve
@@ -29,11 +34,13 @@ module Superfluous
 
     def build
       @logger.log_timing("Building", "Build completed") do
-
-        data = @logger.log_timing("Reading data", "Read data") do
-          data, file_count = Superfluous::Data.read(@src_dir + "data", logger: @logger)
-          @logger.log "Parsed #{file_count} data files"
-          data
+        data_dir = @src_dir + "data"
+        data = if data_dir.exist?
+          @logger.log_timing("Reading data", "Read data") do
+            data, file_count = Superfluous::Data.read(data_dir, logger: @logger)
+            @logger.log "Parsed #{file_count} data files"
+            data
+          end
         end
 
         if ENV['dump_data']
