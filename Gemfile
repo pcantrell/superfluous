@@ -14,3 +14,9 @@ gem "awesome_print", "~> 1.9"
 
 gem "adsf", "~> 1.4"
 gem "adsf-live", "~> 1.4"
+
+group :test do
+  gem "guard", "~> 2.18"
+  gem "guard-minitest", "~> 2.4"
+  gem "diffy", "~> 3.4"
+end
