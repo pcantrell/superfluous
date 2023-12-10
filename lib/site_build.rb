@@ -182,8 +182,8 @@ module Superfluous
     # Methods available only to the template and not the script.
     #
     module TemplateHelpers
-      # Note that `render` has a different meaning in templates vs scripts, so this overrides
-      # the `render` method that scripts see.
+      # Note that `render` has a different meaning in templates vs scripts. The is the method
+      # for tempaltes, which overrides the `render` that scripts see.
       #
       def render(partial, **props, &nested_content)
         @context.search_paths.each do |search_path|

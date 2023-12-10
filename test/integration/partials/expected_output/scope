@@ -1,0 +1,22 @@
+<p>In top script:</p>
+<ul>
+<li>a: 1</li>
+<li>b: 2</li>
+<li>c: 3</li>
+</ul>
+
+<p>In partial:</p>
+<ul>
+<li>a: 400</li>
+<li>b: 5</li>
+<li>c: 600</li>
+</ul>
+
+<p>In block in top script:</p>
+<ul>
+<li>a: 1</li>
+<li>b: 2</li>
+<li>c: 3</li>
+</ul>
+
+<p>(End of partial)</p>

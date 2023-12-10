@@ -1,0 +1,16 @@
+---
+render(a: 1, b: 2, c: 3)
+---
+
+%p In top script:
+%ul
+  %li a: #{a}
+  %li b: #{b}
+  %li c: #{c}
+
+= render 'scope', a: 4, b: 5 do
+  %p In block in top script:
+  %ul
+    %li a: #{a}
+    %li b: #{b}
+    %li c: #{c}

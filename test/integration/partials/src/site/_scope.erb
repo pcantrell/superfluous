@@ -1,0 +1,15 @@
+---
+# Override a, let b pass through, set c fresh in new scope
+render(a: a * 100, c: 600)
+---
+
+<p>In partial:</p>
+<ul>
+<li>a: <%= a %></li>
+<li>b: <%= b %></li>
+<li>c: <%= c %></li>
+</ul>
+
+<%= yield %>
+
+<p>(End of partial)</p>
