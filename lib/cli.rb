@@ -78,7 +78,7 @@ module Superfluous
         puts
         puts "Superfluous gem modified; relaunching..."
         puts
-        exec("ruby", __FILE__, *ARGV)
+        exec((Pathname.new(__dir__) + "../bin/superfluous").realpath.to_s, *ARGV)
       end.start
 
       server = Adsf::Server.new(live: true, root: @output_dir)
