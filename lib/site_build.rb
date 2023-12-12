@@ -106,7 +106,7 @@ module Superfluous
     class ItemContext
       def initialize(build:, site_dir:, item_path:, data:)
         @build = build
-        @site_dir = site_dir
+        @site_dir = site_dir.realpath
         @relative_path = Pathname.new(
           item_path.cleanpath.to_s
             .delete_prefix(site_dir.cleanpath.to_s)
@@ -124,7 +124,7 @@ module Superfluous
       end
 
       def full_path
-        @full_path ||= site_dir + relative_path
+        @full_path ||= (site_dir + relative_path).realpath
       end
 
       def search_paths
@@ -206,7 +206,7 @@ module Superfluous
             ) do |content:, props:, strip_ext:|
               result = content.html_safe
             end
-            return result
+            return result  # Don't keep searching parent dirs; partial found!
           end
         end
         raise "No template found for partial #{partial}"

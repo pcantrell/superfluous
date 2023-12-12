@@ -30,7 +30,11 @@ module AssetHandler
   class Tilt < AssetHandler::Base
     def initialize(template_class, path)
       @script, content = AssetHandler.read_script(path)
-      @template = template_class.new(path) { content }
+      @template_path = path
+      @template_dir = path.parent
+      Dir.chdir(@template_dir) do  # for relative includes (e.g. sass) embedded in template
+        @template = template_class.new(path) { content }
+      end
     end
 
     def render(scope:, props:, nested_content:)
