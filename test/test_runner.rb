@@ -2,7 +2,7 @@ require 'minitest/autorun'
 require "minitest/reporters"
 require 'pathname'
 require 'diffy'
-require_relative '../lib/cli.rb'
+require_relative '../lib/engine.rb'
 
 class IntegrationTest < Minitest::Test
   TESTS_DIR = Pathname.new(__dir__) + "integration"
@@ -57,7 +57,7 @@ private
     return unless expected_output.exist?
 
     Dir.mktmpdir do |actual_output|
-      Superfluous::CLI.new(project_dir:, output_dir: actual_output, logger:)
+      Superfluous::Engine.new(project_dir:, output_dir: actual_output, logger:).build
       assert_dirs_equal(expected_output, actual_output)
     end
   end

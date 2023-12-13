@@ -1,7 +1,4 @@
-require_relative 'data'
-require_relative 'site_build'
-require_relative 'logging'
-require 'awesome_print'
+require_relative 'engine'
 
 module Superfluous
   class CLI
@@ -12,57 +9,19 @@ module Superfluous
       Superfluous::CLI.new(project_dir: args[0], live:, verbose:)
     end
 
-    def initialize(project_dir:, live: false, verbose: false, logger: nil, output_dir: nil)
-      @logger = logger || Logger.new
-      @logger.verbose = verbose
+    def initialize(project_dir:, live:, verbose:)
+      logger = Logger.new
+      logger.verbose = verbose
 
-      @project_dir = Pathname.new(project_dir)
-      @src_dir = @project_dir + "src"
-      @output_dir =
-        if output_dir
-          Pathname.new(output_dir)
-        else
-          @project_dir + "output"
-        end
+      @engine = Engine.new(project_dir:, logger:)
 
       if live
         live_serve
       else
-        build
+        build_guarded
       end
     end
-
-    def build
-      @logger.log_timing("Building", "Build completed") do
-        data_dir = @src_dir + "data"
-        data = if data_dir.exist?
-          @logger.log_timing("Reading data", "Read data") do
-            data, file_count = Superfluous::Data.read(data_dir, logger: @logger)
-            @logger.log "Parsed #{file_count} data files"
-            data
-          end
-        end
-
-        if ENV['dump_data']
-          @logger.log
-          @logger.log "──────────────────────── Data ────────────────────────"
-          @logger.log_indented do
-            @logger.log data.ai(indent: -2, ruby19_syntax: true)
-          end
-          @logger.log "──────────────────────────────────────────────────────"
-          @logger.log
-        end
-
-        @logger.log_timing("Processing site", "Processed site") do
-          build = SiteBuild.new(logger: @logger)
-          build.process_site_clean(
-            data:,
-            site_dir: @src_dir + "site",
-            output_dir: @output_dir)
-        end
-      end
-    end
-
+    
     def live_serve
       require 'adsf'
       require 'adsf/live'
@@ -70,7 +29,7 @@ module Superfluous
 
       build_guarded
 
-      Listen.to(@src_dir, latency: 0.05, wait_for_delay: 0.2) do
+      Listen.to(@engine.src_dir, latency: 0.05, wait_for_delay: 0.2) do
         build_guarded
       end.start
 
@@ -81,7 +40,7 @@ module Superfluous
         exec((Pathname.new(__dir__) + "../bin/superfluous").realpath.to_s, *ARGV)
       end.start
 
-      server = Adsf::Server.new(live: true, root: @output_dir)
+      server = Adsf::Server.new(live: true, root: @engine.output_dir)
       %w[INT TERM].each do |s|
         Signal.trap(s) { server.stop }
       end
@@ -91,7 +50,7 @@ module Superfluous
     def build_guarded
       begin
         puts
-        build
+        @engine.build
         puts
       rescue SystemExit, Interrupt
         raise
