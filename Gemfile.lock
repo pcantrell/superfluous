@@ -112,6 +112,7 @@ DEPENDENCIES
   activesupport (~> 7.1)
   adsf (~> 1.4)
   adsf-live (~> 1.4)
+  ansi (~> 1.5)
   awesome_print (~> 1.9)
   diffy (~> 3.4)
   front_matter_parser (~> 1.0)

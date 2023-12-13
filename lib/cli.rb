@@ -51,13 +51,27 @@ module Superfluous
       begin
         puts
         @engine.build
-        puts
       rescue SystemExit, Interrupt
         raise
+      rescue ::Superfluous::BuildFailure => e
+        flag_failure(e.cause)
+        puts e.message
       rescue Exception => e
-        puts
+        flag_failure(e)
         puts e.full_message(highlight: true)
+      ensure
+        puts
       end
+    end
+
+    def flag_failure(exception)
+      2.times { puts }
+      puts "Superfluous build failed"
+      trace_file = Superfluous.work_dir("logs") +
+        "build-#{Time.now.to_f}-#{exception.class.name.gsub(/:+/, '_')}.log"
+      File.write(trace_file, exception.full_message(highlight: false))
+      puts "  detailed trace in: #{trace_file}"
+      puts
     end
   end
 end

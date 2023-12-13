@@ -11,6 +11,7 @@ gem "htmlbeautifier", "~> 1.4"
 
 gem "activesupport", "~> 7.1"
 gem "awesome_print", "~> 1.9"
+gem "ansi", "~> 1.5"
 
 gem "adsf", "~> 1.4"
 gem "adsf-live", "~> 1.4"

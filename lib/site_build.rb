@@ -96,9 +96,9 @@ module Superfluous
           strip_ext: handler.strip_ext?
         )
       end
-    rescue => e
-      @logger.log "ERROR while processing #{context.full_path}"
-      raise
+    rescue Exception => e
+      raise ::Superfluous::BuildFailure.wrap(e,
+        context_path: context.site_dir.realpath, item_path: context.relative_path)
     end
 
     # Where did a given site item come from? What kind of item is it?
