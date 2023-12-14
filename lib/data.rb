@@ -6,6 +6,8 @@ require 'front_matter_parser'
 
 module Superfluous
   module Data
+    # Recursively read and merge the entire contents of `dir` into a unified data tree.
+    #
     def self.read(dir, logger:)
       raise "Data directory #{dir.to_s} is not a directory" unless dir.directory?
 
@@ -16,18 +18,18 @@ module Superfluous
         logger.log child, temporary: !logger.verbose
 
         child_key = child.basename.to_s
-        next if child_key =~ /^\./
+        next if child_key =~ /^\./  # Never parse dotfiles
 
         if child.directory?
           new_data, sub_file_count = read(child, logger:)
           file_count += sub_file_count
         else
-          child_key.sub!(/\.[^\.]+$/, "")
+          child_key.sub!(/\.[^\.]+$/, "")  # key = filename without extension
           new_data = wrap(parse_file(child))
           file_count += 1
         end
 
-        if child_key == "_"
+        if child_key == "_"  # underscore means contents apply to dir itself
           merge(data, new_data)
         else
           merge_child(data, child_key, new_data)
@@ -54,6 +56,8 @@ module Superfluous
       end
     end
 
+    # Make `new_data` a child of `data`, recursively merging it with any existing data at `key`.
+    #
     def self.merge_child(data, key, new_data)
       unless existing_data = data[key]
         data[key] = new_data  # TODO: handle existing nil value? or not?
@@ -69,12 +73,16 @@ module Superfluous
       merge(existing_data, new_data)
     end
 
+    # Recursively merge two data trees, modifying `existing_data` in place.
+    #
     def self.merge(existing_data, new_data)
       new_data.each_pair do |child_key, child_value|
         merge_child(existing_data, child_key, child_value)
       end
     end
 
+    # Recursively wrap hashes as OpenStructs, leaving other objects untouched.
+    #
     def self.wrap(data)
       case data
         when Hash

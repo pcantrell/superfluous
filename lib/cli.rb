@@ -30,17 +30,20 @@ module Superfluous
 
       build_guarded
 
+      # Changes to site cause rebuild
       Listen.to(@engine.src_dir, latency: 0.05, wait_for_delay: 0.2) do
         build_guarded
       end.start
 
+      # Changes to Superfluous itself cause relaunch + rebuild (for development)
       Listen.to(Pathname.new(__dir__).parent) do
         puts
-        puts "Superfluous gem modified; relaunching..."
+        puts "Superfluous modified; relaunching..."
         puts
         exec((Pathname.new(__dir__) + "../bin/superfluous").realpath.to_s, *ARGV)
       end.start
 
+      # Start a local web server
       override_web_server_logging!
       server = Adsf::Server.new(live: true, root: @engine.output_dir)
       %w[INT TERM].each do |s|
@@ -51,22 +54,21 @@ module Superfluous
 
     def build_guarded
       begin
-        puts
         @engine.build
       rescue SystemExit, Interrupt
         raise
       rescue ::Superfluous::BuildFailure => e
-        flag_failure(e.cause)
+        log_failure(e.cause)
         puts e.message
       rescue Exception => e
-        flag_failure(e)
+        log_failure(e)
         puts e.full_message(highlight: true)
       ensure
         puts
       end
     end
 
-    def flag_failure(exception)
+    def log_failure(exception)
       2.times { puts }
       puts "Superfluous build failed"
       trace_file = Superfluous.work_dir("logs") +
@@ -93,16 +95,15 @@ module Superfluous
       LOG_MUTEX = Mutex.new
 
       def log(env, status, *args)
-        LOG_MUTEX.synchronize do
+        LOG_MUTEX.synchronize do  # ensure colors are attached to correct log line
           if status >= 400
-            print ANSI.red
-            print ANSI.bold
+            print ANSI.red + ANSI.bold
           elsif status == 304
             print ANSI.dark
           elsif status >= 300
             print ANSI.yellow
           end
-          super(env, status, *args)
+          super(env, status, *args)  # Rack’s actual log method
         ensure
           print ANSI.clear
         end

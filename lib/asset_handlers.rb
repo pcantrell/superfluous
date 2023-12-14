@@ -27,6 +27,8 @@ module AssetHandler
     end
   end
 
+  # Tilt handles template files: Haml, Erb, Sass, etc.
+  #
   class Tilt < AssetHandler::Base
     def initialize(template_class, path)
       @script, content = AssetHandler.read_script(path)
@@ -47,6 +49,8 @@ module AssetHandler
     end
   end
 
+  # Handler for raw scripts with no associated template
+  #
   class Script < AssetHandler::Base
     def initialize(path)
       @path = path
@@ -58,6 +62,8 @@ module AssetHandler
     end
   end
 
+  # Handler for unprocessed file types
+  #
   class PassThrough < AssetHandler::Base
     def initialize(path)
       @script = AssetHandler.read_script_file(path)

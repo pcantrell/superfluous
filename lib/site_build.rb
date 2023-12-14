@@ -38,6 +38,9 @@ module Superfluous
 
   private
 
+    # Messy logic for a simple purpose: a nicely formatted site build tree, with multi-output files
+    # collapsed when not in verbose mode.
+    #
     def log_file_processing(context)
       @logger.log context.relative_path, newline: false
       subsequent_line_prefix = nil
@@ -67,8 +70,8 @@ module Superfluous
 
   public
 
-    # Renders a new version of the site to a tmp dir, then quickly swaps out the out contents of the
-    # output dir with the completed results.
+    # Renders a new version of the site to a tmp dir, then quickly swaps out the out entire contents
+    # of the output dir with the completed results.
     #
     def process_site_clean(output_dir:, **kwargs)
       Dir.mktmpdir do |work_dir|
@@ -89,15 +92,14 @@ module Superfluous
       return unless handler
 
       content = eval_script(handler.script, context, props) do |scope:, props:|
+        # Call to `render` from script ends up here
         props.freeze
-        yield(
-          content: handler.render(scope:, props:, nested_content:),
-          props:,
-          strip_ext: handler.strip_ext?
-        )
+        rendered_output = handler.render(scope:, props:, nested_content:)
+        yield(content: rendered_output, props:, strip_ext: handler.strip_ext?)
       end
-    rescue Exception => e
-      raise ::Superfluous::BuildFailure.wrap(e,
+    rescue Exception => exception
+      # Wrapping exceptions adds script call chain context (stack traces are near-useless here)
+      raise ::Superfluous::BuildFailure.wrap(exception,
         context_path: context.site_dir.realpath, item_path: context.relative_path)
     end
 
@@ -127,8 +129,8 @@ module Superfluous
         @full_path ||= (site_dir + relative_path).realpath
       end
 
-      def search_paths
-        @search_paths ||= begin
+      def partial_search_paths
+        @partial_search_paths ||= begin
           result = relative_path.parent.ascend.map do |ancestor|
             site_dir + ancestor
           end
@@ -163,8 +165,8 @@ module Superfluous
       end
     end
 
-    # Methods shared by site scripts and templates. Each script gets its own subclass of
-    # RenderingScope, which includes:
+    # Methods shared by site scripts and templates live in this class and its dynamically generated
+    # subclasses. Each script gets its own subclass of RenderingScope, which includes:
     #
     # - the scripts’s `render` method to trigger template rendering, and
     # - any `def`s from the script.
@@ -182,11 +184,12 @@ module Superfluous
     # Methods available only to the template and not the script.
     #
     module TemplateHelpers
+
       # Note that `render` has a different meaning in templates vs scripts. The is the method
       # for tempaltes, which overrides the `render` that scripts see.
       #
       def render(partial, **props, &nested_content)
-        @context.search_paths.each do |search_path|
+        @context.partial_search_paths.each do |search_path|
           found_path = nil
           search_path.glob("_#{partial}.*") do |path|
             raise "Conflicting templates:\n  #{path}\n  #{found_path}" if found_path
@@ -195,14 +198,12 @@ module Superfluous
           if found_path
             partial_context = @context.for_relative(found_path)
             unless partial_context.singleton?
-              raise "Included partials cannot have [params] in filenames: #{found_path}"
+              raise "Included partials cannot have [props] in filenames: #{found_path}"
             end
 
             result = nil
             @context.build.process_item(
-              partial_context,
-              props:,
-              nested_content:
+              partial_context, props:, nested_content:
             ) do |content:, props:, strip_ext:|
               result = content.html_safe
             end
@@ -210,7 +211,7 @@ module Superfluous
           end
         end
         raise "No template found for partial #{partial}"
-          + " (Searching for _#{partial}.* in #{@context.search_paths.join(', ')})"
+          + " (Searching for _#{partial}.* in #{@context.partial_search_paths.join(', ')})"
       end
     end
 
@@ -232,14 +233,14 @@ module Superfluous
         # No script code; props go to template unmodified
         yield(scope: template_scope, props:)
       else
-        # Setup code present
-
-        # Create binding where evaled code will execute in our new scope.
+        # Eval script in our newly created scope
         script_scope_binding = script_scope.make_script_script_binding
         props.each do |k,v|
           script_scope_binding.local_variable_set(k, v)
         end
 
+        # The `render` method available to the script must be dynamically defined so that it can
+        # capture `template_scope` and `render_count`
         render_count = 0
         script_scope_class.define_method(:render) do |**props_from_script|
           render_count += 1
@@ -248,6 +249,7 @@ module Superfluous
           end
           yield(scope: template_scope, props: props.merge(props_from_script))
         end
+
         script_scope_binding.eval(script)
 
         if context.singleton? && render_count != 1
