@@ -110,15 +110,3 @@ private
     end
   end
 end
-
-
-module SassOptionsOverride
-  def sass_options
-    @options[:cache_location] = Superfluous.work_dir("sass-cache").to_s
-    super
-  end
-end
-
-class ::Tilt::SassTemplate
-  prepend SassOptionsOverride
-end
