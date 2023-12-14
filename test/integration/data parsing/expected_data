@@ -11,7 +11,9 @@
   json_array: (Array) [
     (Integer) 37
     (String) "ahoy"
-    (Hash) {"key"=>"exciting value"}
+    (OpenStruct) {
+      key: (String) "exciting value"
+    }
   ]
   json_bare_int: (Integer) 37
   json_bare_string: (String) "a string"
@@ -29,7 +31,10 @@
   }
   plaintext: (Pathname) "<project_dir>/data parsing/data/plaintext.txt"
   yaml: (Array) [
-    (Hash) {"key"=>"value", "also"=>"another value"}
+    (OpenStruct) {
+      also: (String) "another value"
+      key: (String) "value"
+    }
     (Integer) 17
   ]
   yaml_bare_int: (Integer) 17

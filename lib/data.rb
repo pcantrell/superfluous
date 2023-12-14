@@ -83,6 +83,8 @@ module Superfluous
             result[key] = wrap(value)
           end
           result
+        when Array
+          data.map { |elem| wrap(elem) }
         else
           data.freeze if data.respond_to?(:freeze)
           data

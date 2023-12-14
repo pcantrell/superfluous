@@ -2,6 +2,7 @@ require 'minitest/autorun'
 require "minitest/reporters"
 require 'pathname'
 require 'diffy'
+require 'ansi'
 require_relative '../lib/engine.rb'
 
 class IntegrationTest < Minitest::Test
@@ -94,8 +95,8 @@ private
   def assert_text_equal(expected, actual, name)
     if expected.strip != actual.strip
       diff = Diffy::Diff.new(expected + "\n", actual + "\n").to_s(:color)
-        .gsub(/\e\[3([12])m/) { "\e\[3#{3 - $1.to_i}m" }  # Swap red and green
-      fail "#{name} mismatch:\n#{diff}"
+        .gsub(/\e\[3([12])m/) { "\e\[3#{3 - $1.to_i}m" }  # Swap red and green so correct = green
+      fail "#{name} mismatch:\n#{ANSI.clear}#{diff}"
     end
   end
 
