@@ -22,3 +22,5 @@ group :test do
   gem "diffy", "~> 3.4"
   gem "minitest-reporters", "~> 1.6"
 end
+
+gem "pry", "~> 0.14.2"

@@ -1,7 +1,9 @@
----
+–––––––––––– script.rb ––––––––––––
+
 # Override a, let b pass through, set c fresh in new scope
 render(a: a * 100, c: 600)
----
+
+–––––––––––– template.erb ––––––––––––
 
 <p>In partial:</p>
 <ul>

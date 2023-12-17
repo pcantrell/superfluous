@@ -64,6 +64,7 @@ module Superfluous
     def self.wrap(exception, **context)
       build_failure = (self === exception ? exception : self.new(exception))
       build_failure.append_context(**context)
+      build_failure.set_backtrace(exception.backtrace)
       return build_failure
     end
 

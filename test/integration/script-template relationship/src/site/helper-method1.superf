@@ -1,4 +1,5 @@
----
+–––––––––––– script.rb ––––––––––––
+
 # We need to test that there’s no cross-pollution between scripts for different items without
 # knowing the precise order in which items will be rendered, helper-method1 and helper-method2
 # each define one helper and then verify that that other’s is not in scope.
@@ -8,7 +9,8 @@ def helper1(message)
 end
 
 render
----
+
+–––––––––––– template.erb ––––––––––––
 
 <%=
 begin

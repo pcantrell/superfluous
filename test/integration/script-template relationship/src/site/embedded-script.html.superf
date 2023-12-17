@@ -1,8 +1,10 @@
----
+–––––––––––– script.rb ––––––––––––
+
 script_local_var = 17
 
 render(prop_from_script: "hello")
----
+
+–––––––––––– template.haml ––––––––––––
 
 - script_local_var ||= "not passed from script"
 %p

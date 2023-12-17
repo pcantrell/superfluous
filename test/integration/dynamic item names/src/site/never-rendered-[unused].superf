@@ -1,0 +1,7 @@
+–––––––––––– script.rb ––––––––––––
+
+# This script never calls render
+
+–––––––––––– template.erb ––––––––––––
+
+This should not appear in output!

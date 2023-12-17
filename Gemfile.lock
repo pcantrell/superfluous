@@ -119,6 +119,7 @@ DEPENDENCIES
   htmlbeautifier (~> 1.4)
   kramdown (~> 2.4)
   minitest-reporters (~> 1.6)
+  pry (~> 0.14.2)
   sassc (~> 2.4)
 
 BUNDLED WITH

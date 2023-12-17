@@ -1,6 +1,8 @@
----
+–––––––––––– script.rb ––––––––––––
+
 render(a: 1, b: 2, c: 3)
----
+
+–––––––––––– template.haml ––––––––––––
 
 %p In top script:
 %ul

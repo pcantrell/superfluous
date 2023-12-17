@@ -1,10 +1,12 @@
----
+–––––––––––– script.rb ––––––––––––
+
 def helper2(message)
     "helper 2 says #{message}"
 end
 
 render
----
+
+–––––––––––– template.erb ––––––––––––
 
 <%=
 begin

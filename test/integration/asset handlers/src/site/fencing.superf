@@ -1,0 +1,13 @@
+
+       
+
+--------------------- script.rb –––
+
+render
+
+––– template.erb --------------------------
+
+Not at start of line, so not a fence: ––– template.erb ---
+
+Not enough dashes to be a fence:
+–– template.rb ––
