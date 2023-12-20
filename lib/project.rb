@@ -1,5 +1,5 @@
 require_relative 'data'
-require_relative 'site_build'
+require_relative 'site/site'
 require_relative 'logging'
 require 'ansi'
 require 'awesome_print'
@@ -12,7 +12,7 @@ module Superfluous
     result
   end
 
-  class Engine
+  class Project
     attr_reader :project_dir, :src_dir, :output_dir
 
     def initialize(project_dir:, logger:, output_dir: nil)
@@ -50,11 +50,8 @@ module Superfluous
         end
 
         @logger.log_timing("Processing site", "Processed site") do
-          build = SiteBuild.new(logger: @logger)
-          build.process_site_clean(
-            data:,
-            site_dir: @src_dir + "site",
-            output_dir: @output_dir)
+          Site::Site.new(logger: @logger, site_dir: @src_dir + "site")
+            .build_clean(data:, output_dir: @output_dir)
         end
       end
     end
@@ -94,6 +91,6 @@ module Superfluous
       @context << Context.new(**args)
     end
 
-    Context = ::Data.define(:context_path, :item_path)
+    Context = ::Data.define(:context_path, :item_path) # TODO: use Source instead?
   end
 end

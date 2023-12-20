@@ -1,5 +1,5 @@
 require 'ansi'
-require_relative 'engine'
+require_relative 'project'
 
 module Superfluous
   class CLI
@@ -14,13 +14,11 @@ module Superfluous
       logger = Logger.new
       logger.verbose = verbose
 
-      @engine = Engine.new(project_dir:, logger:)
+      @project = Project.new(project_dir:, logger:)
 
-      if live
-        live_serve
-      else
-        build_guarded
-      end
+      build_guarded
+
+      live_serve if live
     end
     
     def live_serve
@@ -28,10 +26,8 @@ module Superfluous
       require 'adsf/live'
       require 'listen'
 
-      build_guarded
-
       # Changes to site cause rebuild
-      Listen.to(@engine.src_dir, latency: 0.05, wait_for_delay: 0.2) do
+      Listen.to(@project.src_dir, latency: 0.05, wait_for_delay: 0.2) do
         build_guarded
       end.start
 
@@ -45,7 +41,7 @@ module Superfluous
 
       # Start a local web server
       override_web_server_logging!
-      server = Adsf::Server.new(live: true, root: @engine.output_dir)
+      server = Adsf::Server.new(live: true, root: @project.output_dir)
       %w[INT TERM].each do |s|
         Signal.trap(s) { server.stop }
       end
@@ -54,7 +50,7 @@ module Superfluous
 
     def build_guarded
       begin
-        @engine.build
+        @project.build
       rescue SystemExit, Interrupt
         raise
       rescue ::Superfluous::BuildFailure => e

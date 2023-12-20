@@ -1,0 +1,156 @@
+require 'tilt'
+require 'active_support/all'
+require 'tmpdir'
+require_relative 'renderers'
+
+module Superfluous
+  module Site
+    # One build pass of the site. Retains template and script caches, so create a new instance to pick
+    # up changes to input files.
+    #
+    class Site
+      def initialize(site_dir:, logger:)
+        @site_dir = site_dir
+        @logger = logger
+
+        @items_by_logical_path = {}  # logical path → Item
+        Pathname.glob("**/*", base: site_dir) do |relative_path|
+          source = Source.new(site_dir:, relative_path:)
+          next if source.full_path.directory?
+
+          Renderer.read(source) do |logical_path:, piece:|
+            item = @items_by_logical_path[logical_path] ||= Item.new(logical_path)
+            item.add_piece(piece)
+          end
+          # TODO: wrap read errors with path
+        end
+      end
+
+      # Renders a new version of the site to a tmp dir, then quickly swaps out the out entire contents
+      # of the output dir with the completed results.
+      #
+      def build_clean(output_dir:, **kwargs)
+        Dir.mktmpdir do |tmp_dir|
+          tmp_dir = Pathname.new(tmp_dir)
+
+          build(output_dir: tmp_dir, **kwargs)
+
+          Dir.mktmpdir do |old_output|
+            FileUtils.mv output_dir.children, old_output
+            FileUtils.mv tmp_dir.children, output_dir
+          end
+        end
+      end
+
+      # Traverses and processes the site directory, replacing existing files in the output dir but
+      # leaving any extraneous / straggler files untouched.
+      #
+      def build(data:, output_dir:)
+        @items_by_logical_path.values.each do |item|
+          next if item.partial?
+
+          render_count = 0
+          log_item_processing(item) do |log_output_file:|
+            build_item(item, data:) do |context|
+              render_count += 1
+              if item.singleton? && render_count > 1
+                raise "Singleton item script attempted to call render() multiple times: #{item.full_path}"
+              end
+
+              output_file_relative = item.output_path(props: context.props)
+              log_output_file.call(output_file_relative)
+              output_file = output_dir + output_file_relative
+              # TODO: verify that output_file is within output_dir
+
+              unless content = context.props[:content]
+                raise "Pipeline did not produce a `content` prop for #{item}"
+              end
+
+              output_file.parent.mkpath
+              File.write(output_file, content)
+            end
+            if item.singleton? && render_count != 1
+              raise "Singleton item script must call render() exactly once: #{item.logical_path}"
+            end
+          end
+        end
+      end
+
+      def build_item(item, data:, props: {}, nested_content: nil, &final_step)
+        item.add_default_script!  # TODO: remove once scope is fixed
+        pipeline = item.pieces.reverse.reduce(final_step) do |next_steps, piece|
+          lambda do |context|
+            piece.renderer.render(context, &next_steps)  # TODO: freeze props?
+          end
+        end
+
+        builder = self  # because lambda gets a different self
+        pipeline.call(
+          Renderer::Context.new(
+            props: { data: }.merge(props),
+            scope: Object.new,
+            nested_content:,
+            render_partial: lambda do |partial, **props, &block|
+              builder.render_partial(partial, from_item: item, data:, **props, &block)
+            end
+          )
+        )
+
+      # rescue Exception => exception
+      #   # Wrapping exceptions adds script call chain item (stack traces are near-useless here)
+      #   raise ::Superfluous::BuildFailure.wrap(exception,
+      #     # TODO: should be source
+      #     context_path:, item_path: item.logical_path)
+      end
+
+      # Messy logic for a simple purpose: show a nicely formatted site build tree, with multi-output
+      # files collapsed when not in verbose mode.
+      #
+      def log_item_processing(item)
+        @logger.log item.logical_path, newline: false
+        subsequent_line_prefix = nil
+        output_count = 0
+
+        yield(
+          log_output_file: Proc.new do |output_file_relative|
+            if output_count == 0 || @logger.verbose
+              if subsequent_line_prefix
+                @logger.log subsequent_line_prefix, newline: false
+              else
+                subsequent_line_prefix = " " * item.logical_path.to_s.size
+              end
+            end
+            @logger.log " → #{output_file_relative}", temporary: !@logger.verbose
+            output_count += 1
+          end
+        )
+
+        if !@logger.verbose
+          @logger.make_last_temporary_permanent
+          if output_count > 1
+            @logger.log "#{subsequent_line_prefix} → …#{output_count - 1} more…"
+          end
+        end
+      end
+
+      def render_partial(partial, from_item:, data:, **props, &nested_content)
+        from_item.partial_search_paths.each do |search_path|
+          if partial_item = @items_by_logical_path[search_path + "_#{partial}"]
+            unless partial_item.singleton?
+              raise "Included partials cannot have [props] in filenames: #{partial_item.logical_path}"
+            end
+
+            result = nil
+            build_item(partial_item, data:, props:, nested_content:) do |context|
+              # TODO: move render_count checking into shared code, use it here
+              result = context.props[:content].html_safe
+            end
+            return result
+          end
+        end
+        raise "No template found for partial #{partial}"
+          + " (Searching for _#{partial}.* in #{from_item.partial_search_paths.join(', ')})"
+      end
+    end
+  end
+end
