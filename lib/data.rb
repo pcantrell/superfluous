@@ -9,7 +9,7 @@ module Superfluous
     # Recursively read and merge the entire contents of `dir` into a unified data tree.
     #
     def self.read(dir, logger:)
-      raise "Data directory #{dir.to_s} is not a directory" unless dir.directory?
+      raise "#{dir.to_s} is not a directory" unless dir.directory?
 
       data = OpenStruct.new
 

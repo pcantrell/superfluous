@@ -3,31 +3,27 @@ module Superfluous
     # A source of site presentation content, either a whole file or a part of one
     #
     class Source
-      def initialize(site_dir:, relative_path:, ext: nil, line_offset: nil, content: nil)
+      def initialize(site_dir:, relative_path:, ext: nil, line_num: 1, content: nil)
         @site_dir = site_dir
         @relative_path = relative_path
-        @line_offset = line_offset
+        @line_num = line_num
         @content = content
         @ext = ext || relative_path.extname
         @full_path = (site_dir + relative_path).realpath
       end
 
-      attr_reader :full_path, :site_dir, :relative_path, :line_offset, :ext
+      attr_reader :full_path, :site_dir, :relative_path, :line_num, :ext
 
       def content
         @content || full_path.read
       end
 
-      def subsection(ext:, line_offset:, content:)
-        self.class.new(site_dir:, relative_path:, ext:, line_offset:, content:)
+      def subsection(ext:, line_num:, content:)
+        self.class.new(site_dir:, relative_path:, ext:, line_num:, content:)
       end
 
       def to_s
-        if line_offset
-          "#{full_path}:#{line_offset}"  # fence is at line_offset; content is at line_offset + 1
-        else
-          full_path.to_s
-        end
+        "#{full_path}:#{line_num}"
       end
     end
 

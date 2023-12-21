@@ -34,18 +34,20 @@ module Superfluous
           end
 
           until scanner.eos?
-            scanner.scan(FENCE) or raise "Malformed fence at #{scanner.charpos}"
+            scanner.scan(FENCE) or raise "Malformed fence at #{source.full_path}:#{scanner.line_number}"
             kind = scanner[:kind].to_sym
             ext = scanner[:ext]
             section = source.subsection(
               ext:,
-              line_offset: 10000,  # TODO: set line number
+              line_num: scanner.line_number,
               content: scanner.scan_until(NEXT_FENCE)
             )
 
             renderer =
               if kind == :script  # TODO: recurse back to read instead? shouldn't be .superf special case
-                raise "Unsupported script type #{ext.inspect}" unless ext == "rb"
+                unless ext == "rb"
+                  raise "Unsupported script type #{ext.inspect} at #{section}"
+                end
                 RubyScript.new(section)
               elsif kind == :style  # temporary shim for test site; TODO: implement CSS bundling as plugin
                 PassThrough.new(section.content)
@@ -82,7 +84,10 @@ module Superfluous
         def self.read_template(source)
           # TODO: fix possible symlink issue on next line (should context be source or target dir?)
           Dir.chdir(source.full_path.parent) do  # for relative includes (e.g. sass) embedded in template
-            self.new(Tilt.new(source.ext) { source.content })
+            self.new(
+              Tilt.template_for(source.ext)
+                .new(source.full_path, source.line_num) { source.content }
+            )
           end
         end
 
@@ -128,7 +133,7 @@ module Superfluous
         end
 
         def attach_to(item)
-          item.scope_class.class_eval(@source.content)
+          item.scope_class.class_eval(@source.content, @source.full_path.to_s, @source.line_num)
 
           unless item.scope_class.instance_methods.include?(:build)
             raise "Script does not define a `build` method: #{@source}"
@@ -171,5 +176,11 @@ module Superfluous
         end
       end
     end
+  end
+end
+
+class StringScanner
+  def line_number
+    string.byteslice(0, pos).count("\n") + 1  # inefficient, but… ¯\_(ツ)_/¯
   end
 end

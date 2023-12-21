@@ -5,8 +5,7 @@ require_relative 'renderers'
 
 module Superfluous
   module Site
-    # One build pass of the site. Retains template and script caches, so create a new instance to pick
-    # up changes to input files.
+    # Retains compiled scripts and templates, so create a new instance to pick up changes.
     #
     class Site
       def initialize(site_dir:, logger:)
@@ -96,12 +95,6 @@ module Superfluous
             end
           )
         )
-
-      # rescue Exception => exception
-      #   # Wrapping exceptions adds script call chain item (stack traces are near-useless here)
-      #   raise ::Superfluous::BuildFailure.wrap(exception,
-      #     # TODO: should be source
-      #     context_path:, item_path: item.logical_path)
       end
 
       # Messy logic for a simple purpose: show a nicely formatted site build tree, with multi-output

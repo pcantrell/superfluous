@@ -1,7 +1,6 @@
 require_relative 'data'
 require_relative 'site/site'
 require_relative 'logging'
-require 'ansi'
 require 'awesome_print'
 
 module Superfluous
@@ -55,42 +54,5 @@ module Superfluous
         end
       end
     end
-  end
-
-  class BuildFailure < Exception
-    def self.wrap(exception, **context)
-      build_failure = (self === exception ? exception : self.new(exception))
-      build_failure.append_context(**context)
-      build_failure.set_backtrace(exception.backtrace)
-      return build_failure
-    end
-
-    attr_reader :cause
-
-    def initialize(exception)
-      super(exception.message)
-      @cause = exception
-      @context = []
-    end
-
-    def message
-      [
-        ANSI.bold { ANSI.red { @cause.message } },
-        ANSI.red { "  (#{@cause.class})" },
-        @context.map do |ctx|
-          [
-            ANSI.dark { "\n  in " },
-            ANSI.yellow { ANSI.dark { ctx.context_path.to_s + "/" } },
-            ANSI.yellow { ctx.item_path },
-          ]
-        end,
-      ].flatten.join
-    end
-
-    def append_context(**args)
-      @context << Context.new(**args)
-    end
-
-    Context = ::Data.define(:context_path, :item_path) # TODO: use Source instead?
   end
 end

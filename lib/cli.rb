@@ -53,12 +53,8 @@ module Superfluous
         @project.build
       rescue SystemExit, Interrupt
         raise
-      rescue ::Superfluous::BuildFailure => e
-        log_failure(e.cause)
-        puts e.message
       rescue Exception => e
         log_failure(e)
-        puts e.full_message(highlight: true)
       ensure
         puts
       end
@@ -69,8 +65,37 @@ module Superfluous
       puts "Superfluous build failed"
       trace_file = Superfluous.work_dir("logs") +
         "build-#{Time.now.to_f}-#{exception.class.name.gsub(/:+/, '_')}.log"
+      
       File.write(trace_file, exception.full_message(highlight: false))
-      puts "  detailed trace in: #{trace_file}"
+      puts "  detailed stack trace in: #{trace_file}"
+      puts
+
+      puts ANSI.bold { ANSI.red { exception.message } }
+
+      full_src_dir = @project.src_dir.realpath.to_s + "/"
+      found_user_context = false
+      exception.backtrace_locations.each do |location|
+        path = (location.absolute_path || location.path)
+        if path.start_with?(full_src_dir)
+          context_path = full_src_dir
+          user_path = path.delete_prefix(full_src_dir)
+          found_user_context = true
+        elsif found_user_context
+          next
+        else
+          context_path = path
+          user_path = nil
+        end
+
+        print ANSI.dark { "  from " }
+        print ANSI.yellow { ANSI.dark { context_path } }
+        print ANSI.yellow { user_path }
+        print ANSI.dark { ":" }
+        print ANSI.dark unless user_path
+        print ANSI.cyan { location.lineno }
+        print ANSI.blue { " (in #{location.label})" }
+        puts ANSI.clear
+      end
       puts
     end
 
