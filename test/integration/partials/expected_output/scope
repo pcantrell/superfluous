@@ -3,13 +3,15 @@
 <li>a: 1</li>
 <li>b: 2</li>
 <li>c: 3</li>
+<li>d: 4</li>
 </ul>
 
 <p>In partial:</p>
 <ul>
-<li>a: 400</li>
-<li>b: 5</li>
-<li>c: 600</li>
+<li>a: 500</li>
+<li>b: 6</li>
+<li>c: 7</li>
+<li>d: -1000</li>
 </ul>
 
 <p>In block in top script:</p>
@@ -17,6 +19,7 @@
 <li>a: 1</li>
 <li>b: 2</li>
 <li>c: 3</li>
+<li>d: 4</li>
 </ul>
 
 <p>(End of partial)</p>

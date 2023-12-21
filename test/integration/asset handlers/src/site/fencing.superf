@@ -3,7 +3,9 @@
 
 --------------------- script.rb –––
 
-render
+def build
+  render
+end
 
 ––– template.erb --------------------------
 

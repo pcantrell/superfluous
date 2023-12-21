@@ -19,7 +19,8 @@ module Superfluous
           next if source.full_path.directory?
 
           Renderer.read(source) do |logical_path:, piece:|
-            item = @items_by_logical_path[logical_path] ||= Item.new(logical_path)
+            item = @items_by_logical_path[logical_path] ||=
+              Item.new(logical_path, Class.new(Renderer::RenderingScope))
             item.add_piece(piece)
           end
           # TODO: wrap read errors with path
@@ -77,10 +78,10 @@ module Superfluous
       end
 
       def build_item(item, data:, props: {}, nested_content: nil, &final_step)
-        item.add_default_script!  # TODO: remove once scope is fixed
-        pipeline = item.pieces.reverse.reduce(final_step) do |next_steps, piece|
+        pipeline = item.pieces.reverse.reduce(final_step) do |next_pipeline_step, piece|
           lambda do |context|
-            piece.renderer.render(context, &next_steps)  # TODO: freeze props?
+            context = context.with(scope: item.scope_class.new(context:, next_pipeline_step:))
+            piece.renderer.render(context, &next_pipeline_step)  # TODO: freeze props?
           end
         end
 
@@ -88,7 +89,7 @@ module Superfluous
         pipeline.call(
           Renderer::Context.new(
             props: { data: }.merge(props),
-            scope: Object.new,
+            scope: nil,
             nested_content:,
             render_partial: lambda do |partial, **props, &block|
               builder.render_partial(partial, from_item: item, data:, **props, &block)

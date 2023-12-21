@@ -34,12 +34,13 @@ module Superfluous
     # One logical unit of several parts from the site/ directory, which may span multiple files.
     #
     class Item
-      def initialize(logical_path)
+      def initialize(logical_path, scope_class)
         @logical_path = logical_path
+        @scope_class = scope_class
         @pieces_by_kind = {}
       end
 
-      attr_reader :logical_path
+      attr_reader :logical_path, :scope_class
 
       def add_piece(piece)
         raise "Unknown kind of piece: #{piece.kind}" unless PROCESSING_ORDER.include?(piece.kind)
@@ -50,6 +51,8 @@ module Superfluous
         end
 
         @pieces_by_kind[piece.kind] = piece
+
+        piece.renderer.attach_to(self)
       end
 
       PROCESSING_ORDER = [:script, :template, :style]
@@ -78,15 +81,6 @@ module Superfluous
               " available props are: #{props.keys.join(', ')}"
           end
           props[key]
-        end
-      end
-
-      # TODO: bridge hack for refactoring; remove once we have script scope lifted into pipeline logic
-      def add_default_script!
-        @pieces_by_kind[:script] ||= begin
-          source = Source.new(site_dir: Pathname.new(""), relative_path: Pathname.new(""), content: "render")
-          Piece.new(
-            kind: :script, source:, renderer: Renderer::RubyScript.new(source))
         end
       end
 

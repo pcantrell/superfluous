@@ -1,2 +1,5 @@
 –––script.rb–––
-render(separate_file_prop: "It came from the file!!!")
+
+def build
+  render(separate_file_prop: "It came from the file!!!")
+end

@@ -1,7 +1,12 @@
 –––––––––––– script.rb ––––––––––––
 
-# Override a, let b pass through, set c fresh in new scope
-render(a: a * 100, c: 600)
+# a: overridden by script
+# b: script uses but doesn't override; passed through
+# c: script doesn't mention at all; passed through
+# d: overridden by script
+def build(a:, b:)
+  render(a: a * 100, d: -1000)
+end
 
 –––––––––––– template.erb ––––––––––––
 
@@ -10,6 +15,7 @@ render(a: a * 100, c: 600)
 <li>a: <%= a %></li>
 <li>b: <%= b %></li>
 <li>c: <%= c %></li>
+<li>d: <%= d %></li>
 </ul>
 
 <%= yield %>

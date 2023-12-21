@@ -1,3 +1,5 @@
 –––– script.rb ––––
 
-render(path: "at/the/top/of/a/long/ladder/")
+def build
+  render(path: "at/the/top/of/a/long/ladder/")
+end

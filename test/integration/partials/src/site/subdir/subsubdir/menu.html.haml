@@ -1,4 +1,4 @@
-= render :site, title: "Menu" do
+= partial :site, title: "Menu" do
   %ul
-    %li= render :menu_item, color: "smaragdine", flavor: "unctious"
-    %li= render :menu_item, color: "fulvous", flavor: "umami"
+    %li= partial :menu_item, color: "smaragdine", flavor: "unctious"
+    %li= partial :menu_item, color: "fulvous", flavor: "umami"

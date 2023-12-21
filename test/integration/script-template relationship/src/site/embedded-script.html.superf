@@ -1,8 +1,11 @@
 –––––––––––– script.rb ––––––––––––
 
-script_local_var = 17
+def build
+  script_local_var = 17
+  @script_ivar = 63
 
-render(prop_from_script: "hello")
+  render(prop_from_script: "hello")
+end
 
 –––––––––––– template.haml ––––––––––––
 
@@ -10,6 +13,10 @@ render(prop_from_script: "hello")
 %p
   script local var:
   = script_local_var
+
+%p
+  script ivar:
+  = @script_ivar || "not passed from script"
 
 %p
   prop from script:

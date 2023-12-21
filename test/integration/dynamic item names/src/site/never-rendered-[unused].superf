@@ -1,6 +1,8 @@
 –––––––––––– script.rb ––––––––––––
 
 # This script never calls render
+def build
+end
 
 –––––––––––– template.erb ––––––––––––
 

@@ -1,3 +1,5 @@
 –––––––––––– script.rb ––––––––––––
 
-render(content: "<h1>One plus one is #{1 + 1}</h1>")
+def build
+  render(content: "<h1>One plus one is #{1 + 1}</h1>")
+end

@@ -8,7 +8,9 @@ def helper1(message)
     "helper 1 says #{message}"
 end
 
-render
+def build
+  render
+end
 
 –––––––––––– template.erb ––––––––––––
 

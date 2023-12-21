@@ -1,4 +1,6 @@
 --- script.rb ---
 
-render(num: 73)
-render(num: 214)
+def build
+  render(num: 73)
+  render(num: 214)
+end
