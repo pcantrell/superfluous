@@ -4,7 +4,7 @@ require_relative 'item'
 module Superfluous
   module Site
     module Renderer
-      Context = ::Data.define(:props, :scope, :nested_content, :render_partial) do
+      Context = ::Data.define(:props, :scope, :nested_content, :partial_renderer) do
         def override_props(**overrides)
           with(props: props.merge(overrides))
         end
@@ -161,7 +161,7 @@ module Superfluous
         end
 
         def partial(partial, **props, &block)
-          @context.render_partial.call(partial, **props, &block)
+          @context.partial_renderer.call(partial, **props, &block)
         end
 
         def render(**props_from_script)

@@ -79,20 +79,20 @@ module Superfluous
 
       def build_item(item, data:, props: {}, nested_content: nil, &final_step)
         pipeline = item.pieces.reverse.reduce(final_step) do |next_pipeline_step, piece|
-          lambda do |context|
-            context = context.with(scope: item.scope_class.new(context:, next_pipeline_step:))
+          lambda do |context|  # context here will come from previous steps
+            context = context.with(scope:
+              item.scope_class.new(context:, next_pipeline_step:))
             piece.renderer.render(context, &next_pipeline_step)  # TODO: freeze props?
           end
         end
 
-        builder = self  # because lambda gets a different self
         pipeline.call(
           Renderer::Context.new(
             props: { data: }.merge(props),
-            scope: nil,
+            scope: nil,  # each pipeline step will get its own scope object
             nested_content:,
-            render_partial: lambda do |partial, **props, &block|
-              builder.render_partial(partial, from_item: item, data:, **props, &block)
+            partial_renderer: lambda do |partial, **props, &block|
+              render_partial(partial, from_item: item, data:, **props, &block)
             end
           )
         )
