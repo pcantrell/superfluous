@@ -4,17 +4,17 @@ require 'tmpdir'
 require_relative 'renderers'
 
 module Superfluous
-  module Site
+  module Presentation
     # Retains compiled scripts and templates, so create a new instance to pick up changes.
     #
-    class Site
-      def initialize(site_dir:, logger:)
-        @site_dir = site_dir
+    class Builder
+      def initialize(presentation_dir:, logger:)
+        @presentation_dir = presentation_dir
         @logger = logger
 
         @items_by_logical_path = {}  # logical path → Item
-        Pathname.glob("**/*", base: site_dir) do |relative_path|
-          source = Source.new(site_dir:, relative_path:)
+        Pathname.glob("**/*", base: presentation_dir) do |relative_path|
+          source = Source.new(root_dir: presentation_dir, relative_path:)
           next if source.full_path.directory?
 
           Renderer.read(source) do |logical_path:, piece:|
@@ -26,8 +26,8 @@ module Superfluous
         end
       end
 
-      # Renders a new version of the site to a tmp dir, then quickly swaps out the out entire contents
-      # of the output dir with the completed results.
+      # Renders a new version of the output to a tmp dir, then quickly swaps out the out entire
+      # contents of the actual output dir with the completed results.
       #
       def build_clean(output_dir:, **kwargs)
         Dir.mktmpdir do |tmp_dir|
@@ -42,8 +42,8 @@ module Superfluous
         end
       end
 
-      # Traverses and processes the site directory, replacing existing files in the output dir but
-      # leaving any extraneous / straggler files untouched.
+      # Traverses and processes the presentation/ directory, replacing existing files in the output
+      # dir but leaving any extraneous / straggler files untouched.
       #
       def build(data:, output_dir:)
         @items_by_logical_path.values.each do |item|
@@ -97,7 +97,7 @@ module Superfluous
         )
       end
 
-      # Messy logic for a simple purpose: show a nicely formatted site build tree, with multi-output
+      # Messy logic for a simple purpose: show a nicely formatted build tree, with multi-output
       # files collapsed when not in verbose mode.
       #
       def log_item_processing(item)

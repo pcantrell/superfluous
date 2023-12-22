@@ -1,5 +1,5 @@
 require_relative 'data'
-require_relative 'site/site'
+require_relative 'presentation/builder'
 require_relative 'logging'
 require 'awesome_print'
 
@@ -48,8 +48,8 @@ module Superfluous
           @logger.log
         end
 
-        @logger.log_timing("Processing site", "Processed site") do
-          Site::Site.new(logger: @logger, site_dir: @src_dir + "site")
+        @logger.log_timing("Applying presentation", "Presentation applied") do
+          Presentation::Builder.new(presentation_dir: @src_dir + "presentation", logger: @logger)
             .build_clean(data:, output_dir: @output_dir)
         end
       end

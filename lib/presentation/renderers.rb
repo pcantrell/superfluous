@@ -2,7 +2,7 @@ require 'strscan'
 require_relative 'item'
 
 module Superfluous
-  module Site
+  module Presentation
     module Renderer
       Context = ::Data.define(:props, :scope, :nested_content, :partial_renderer) do
         def override_props(**overrides)
@@ -14,7 +14,7 @@ module Superfluous
         [SuperfluousFile, TiltTemplate, PassThrough].each do |renderer_type|
           return if renderer_type.read(source, &block)
         end
-        raise "Don’t know how to handle site content at #{source}"
+        raise "Don’t know how to handle item at #{source}"
       end
 
       class Base
@@ -152,8 +152,8 @@ module Superfluous
         end
       end
 
-      # Methods used by site scripts and templates live in a dynamically generated subclass of this
-      # class. That covers:
+      # Methods used by presentation scripts and templates live in a dynamically generated subclass
+      # of this class. That covers:
       #
       # - the scripts’s `render` method to trigger template rendering,
       # - the `partial` method to render a partial item, and

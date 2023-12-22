@@ -1,25 +1,25 @@
 module Superfluous
-  module Site
-    # A source of site presentation content, either a whole file or a part of one
+  module Presentation
+    # A source of presentation content, either a whole file or a part of one
     #
     class Source
-      def initialize(site_dir:, relative_path:, ext: nil, line_num: 1, content: nil)
-        @site_dir = site_dir
+      def initialize(root_dir:, relative_path:, ext: nil, line_num: 1, content: nil)
+        @root_dir = root_dir
         @relative_path = relative_path
         @line_num = line_num
         @content = content
         @ext = ext || relative_path.extname
-        @full_path = (site_dir + relative_path).realpath
+        @full_path = (root_dir + relative_path).realpath
       end
 
-      attr_reader :full_path, :site_dir, :relative_path, :line_num, :ext
+      attr_reader :full_path, :root_dir, :relative_path, :line_num, :ext
 
       def content
         @content || full_path.read
       end
 
       def subsection(ext:, line_num:, content:)
-        self.class.new(site_dir:, relative_path:, ext:, line_num:, content:)
+        self.class.new(root_dir:, relative_path:, ext:, line_num:, content:)
       end
 
       def to_s
@@ -27,7 +27,7 @@ module Superfluous
       end
     end
 
-    # One logical unit of several parts from the site/ directory, which may span multiple files.
+    # One logical unit of one or more presentation pieces, which may span multiple source files.
     #
     class Item
       def initialize(logical_path, scope_class)

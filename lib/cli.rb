@@ -26,7 +26,7 @@ module Superfluous
       require 'adsf/live'
       require 'listen'
 
-      # Changes to site cause rebuild
+      # Changes to any part of src/ cause rebuild
       Listen.to(@project.src_dir, latency: 0.05, wait_for_delay: 0.2) do
         build_guarded
       end.start
