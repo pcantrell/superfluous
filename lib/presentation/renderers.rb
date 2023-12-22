@@ -14,7 +14,7 @@ module Superfluous
         [SuperfluousFile, TiltTemplate, PassThrough].each do |renderer_type|
           return if renderer_type.read(source, &block)
         end
-        raise "Don’t know how to handle item at #{source}"
+        raise "Don’t know how to handle item at #{source}"  # TODO: test once pipeline is customizable
       end
 
       class Base
@@ -30,7 +30,7 @@ module Superfluous
           
           before_first = scanner.scan_until(NEXT_FENCE)
           unless before_first.blank?
-            raise "Illegal content before first –––fence––– in #{source}:\n  #{before_first.inspect}"
+            raise "Illegal content before first –––fence––– at #{source}:\n  #{before_first.inspect}"
           end
 
           until scanner.eos?
@@ -45,15 +45,16 @@ module Superfluous
 
             renderer =
               if kind == :script  # TODO: recurse back to read instead? shouldn't be .superf special case
-                unless ext == "rb"
-                  raise "Unsupported script type #{ext.inspect} at #{section}"
-                end
-                RubyScript.new(section)
+                RubyScript.new(section) if ext == "rb"
               elsif kind == :style  # temporary shim for test site; TODO: implement CSS bundling as plugin
                 PassThrough.new(section.content)
               else
                 TiltTemplate.read_template(section)
               end
+
+            unless renderer
+              raise "Unsupported #{kind} type #{ext.inspect} at #{section}"
+            end
 
             yield(
               logical_path: section.relative_path.sub_ext(""),
@@ -64,19 +65,19 @@ module Superfluous
 
       private
 
-        FENCE_BAR = /\s*[-–]{3,}\s*/
+        FENCE_BAR = / *[-–]{3,}\s*/
         NEXT_FENCE = /^ (?=#{FENCE_BAR}) | \z /x
-        FENCE = /^ #{FENCE_BAR} (?<kind>.+)\.(?<ext>.+?) #{FENCE_BAR} $/x
+        FENCE = /^ #{FENCE_BAR} (?<kind>\w+)\.(?<ext>\w+?) #{FENCE_BAR} $/x
       end
 
       # Handles template files: Haml, Erb, Sass, etc.
       #
       class TiltTemplate < Base
         def self.read(source, &block)
-          return unless Tilt.template_for(source.full_path)
+          return unless renderer = read_template(source)
           yield(
             logical_path: source.relative_path.sub_ext(""),
-            piece: Piece.new(kind: :template, source:, renderer: read_template(source))
+            piece: Piece.new(kind: :template, source:, renderer:)
           )
           return :success
         end
@@ -84,9 +85,11 @@ module Superfluous
         def self.read_template(source)
           # TODO: fix possible symlink issue on next line (should context be source or target dir?)
           Dir.chdir(source.full_path.parent) do  # for relative includes (e.g. sass) embedded in template
+            return nil unless template_class = Tilt.template_for(source.ext)
             self.new(
-              Tilt.template_for(source.ext)
-                .new(source.full_path, source.line_num) { source.content }
+              template_class.new(source.full_path, source.line_num) do
+                source.content
+              end
             )
           end
         end

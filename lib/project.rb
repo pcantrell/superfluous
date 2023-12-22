@@ -29,6 +29,7 @@ module Superfluous
 
     def build
       @logger.log_timing("Building", "Build completed") do
+        @output_dir.mkdir unless @output_dir.exist?
         data_dir = @src_dir + "data"
         data = if data_dir.exist?
           @logger.log_timing("Reading data", "Read data") do

@@ -66,8 +66,8 @@ module Superfluous
 
       unless existing_data.is_a?(OpenStruct) && new_data.is_a?(OpenStruct)
         raise "Cannot merge data for #{key}:" +
-          " existing data is #{existing_data.class} " +
-          " but new data is #{new_data.class}"
+          "\n  value 1: #{existing_data.inspect} " +
+          "\n  value 2: #{new_data.inspect}"
       end
 
       merge(existing_data, new_data)

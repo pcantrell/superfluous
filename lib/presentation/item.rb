@@ -42,8 +42,8 @@ module Superfluous
         raise "Unknown kind of piece: #{piece.kind}" unless PROCESSING_ORDER.include?(piece.kind)
           
         if existing_piece = @pieces_by_kind[piece.kind]
-          raise "Conflicting `#{piece.kind}` pieces_by_kind for #{logical_path}:" +
-            [piece, existing_piece].map { |p| "\n  in #{piece.location}" }.join
+          raise "Conflicting `#{piece.kind}` piece for item #{self}:" +
+            [piece, existing_piece].map { |piece| "\n  in #{piece.source}" }.join
         end
 
         @pieces_by_kind[piece.kind] = piece
@@ -73,11 +73,15 @@ module Superfluous
         logical_path.parent + logical_path.basename.to_s.gsub(PROP_PATTERN) do
           key = $1.to_sym
           unless props.has_key?(key)
-            raise "Prop [#{$1}] appears in #{logical_path}, but no value given;" +
+            raise "Prop [#{$1}] appears in item path #{self}, but no value given for #{$1};" +
               " available props are: #{props.keys.join(', ')}"
           end
           props[key]
         end
+      end
+
+      def to_s
+        "❰#{logical_path}❱"
       end
 
     private

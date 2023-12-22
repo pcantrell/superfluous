@@ -9,6 +9,8 @@ module Superfluous
     #
     class Builder
       def initialize(presentation_dir:, logger:)
+        raise "#{presentation_dir.to_s} is not a directory" unless presentation_dir.directory?
+
         @presentation_dir = presentation_dir
         @logger = logger
 
@@ -54,7 +56,7 @@ module Superfluous
             build_item(item, data:) do |context|
               render_count += 1
               if item.singleton? && render_count > 1
-                raise "Singleton item script attempted to call render() multiple times: #{item.full_path}"
+                raise "Singleton #{item} attempted to render multiple times"
               end
 
               output_file_relative = item.output_path(props: context.props)
@@ -63,14 +65,16 @@ module Superfluous
               # TODO: verify that output_file is within output_dir
 
               unless content = context.props[:content]
-                raise "Pipeline did not produce a `content` prop for #{item}"
+                raise "Pipeline did not produce a `content` prop for #{item}. When an item has" +
+                  " only a script and no template, the script must call `render(content: ...)`."
               end
 
               output_file.parent.mkpath
               File.write(output_file, content)
             end
             if item.singleton? && render_count != 1
-              raise "Singleton item script must call render() exactly once: #{item.logical_path}"
+              raise "Singleton #{item} rendered #{render_count} times, but should have rendered" +
+                " exactly once. The most common cause for this is a script never calling `render`."
             end
           end
         end
@@ -119,6 +123,7 @@ module Superfluous
           end
         )
 
+        @logger.log "  ⚠️  no output", temporary: !@logger.verbose if output_count == 0
         if !@logger.verbose
           @logger.make_last_temporary_permanent
           if output_count > 1
@@ -131,7 +136,7 @@ module Superfluous
         from_item.partial_search_paths.each do |search_path|
           if partial_item = @items_by_logical_path[search_path + "_#{partial}"]
             unless partial_item.singleton?
-              raise "Included partials cannot have [props] in filenames: #{partial_item.logical_path}"
+              raise "Partial #{partial_item} cannot have [square braces] in its filename"
             end
 
             result = nil
@@ -142,8 +147,8 @@ module Superfluous
             return result
           end
         end
-        raise "No template found for partial #{partial}"
-          + " (Searching for _#{partial}.* in #{from_item.partial_search_paths.join(', ')})"
+        searched_paths = from_item.partial_search_paths.map { |path| path + "_#{partial}.*" }
+        raise "No template found for partial #{partial} (Searched for #{searched_paths.join(', ')})"
       end
     end
   end
