@@ -23,4 +23,7 @@ group :test do
   gem "minitest-reporters", "~> 1.6"
 end
 
-gem "pry", "~> 0.14.2"
+group :development do
+  gem "pry", "~> 0.14.2"
+  gem "rake", "~> 13.1"
+end
