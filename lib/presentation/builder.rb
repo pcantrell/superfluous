@@ -162,7 +162,6 @@ module Superfluous
 
             result = nil
             build_item(partial_item, data:, props:, nested_content:) do |context|
-              # TODO: move output_count checking into shared code, use it here
               result = context.props[:content].html_safe
             end
             return result
