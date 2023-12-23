@@ -1,5 +1,6 @@
 require 'minitest/autorun'
 require "minitest/reporters"
+require "minitest/focus"
 require 'pathname'
 require_relative '../lib/project'
 

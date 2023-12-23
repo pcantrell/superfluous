@@ -2,6 +2,7 @@ require 'tilt'
 require 'active_support/all'
 require 'tmpdir'
 require_relative 'renderers'
+require_relative '../extensions'
 
 module Superfluous
   module Presentation
@@ -24,7 +25,6 @@ module Superfluous
               Item.new(logical_path, Class.new(Renderer::RenderingScope))
             item.add_piece(piece)
           end
-          # TODO: wrap read errors with path
         end
       end
 
@@ -48,6 +48,7 @@ module Superfluous
       # dir but leaving any extraneous / straggler files untouched.
       #
       def build(data:, output_dir:)
+        output_dir = output_dir.realpath
         @items_by_logical_path.values.each do |item|
           next if item.partial?
 
@@ -61,8 +62,13 @@ module Superfluous
 
               output_file_relative = item.output_path(props: context.props)
               log_output_file.call(output_file_relative)
-              output_file = output_dir + output_file_relative
-              # TODO: verify that output_file is within output_dir
+              output_file = (output_dir + output_file_relative).cleanpath
+              unless output_dir.contains?(output_file)
+                raise "Item produced a dynamic output path that lands outsite the output folder" +
+                  "\n  relative output path: #{output_file_relative}" +
+                  "\n           resolved to: #{output_file}" +
+                  "\n   which is outside of: #{output_dir}"
+              end
 
               unless content = context.props[:content]
                 raise "Pipeline did not produce a `content` prop for #{item}. When an item has" +
@@ -83,9 +89,9 @@ module Superfluous
       def build_item(item, data:, props: {}, nested_content: nil, &final_step)
         pipeline = item.pieces.reverse.reduce(final_step) do |next_pipeline_step, piece|
           lambda do |context|  # context here will come from previous steps
-            context = context.with(scope:
-              item.scope_class.new(context:, next_pipeline_step:))
-            piece.renderer.render(context, &next_pipeline_step)  # TODO: freeze props?
+            context = context.with(
+              scope: item.scope_class.new(context:, next_pipeline_step:))
+            piece.renderer.render(context, &next_pipeline_step)
           end
         end
 

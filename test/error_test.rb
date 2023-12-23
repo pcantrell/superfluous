@@ -146,6 +146,39 @@ class ErrorTest < SuperfluousTest
     )
   end
 
+  def test_no_content_on_second_render
+    # The helps test that props from one render don't propagate to the next
+    build_and_check_error(
+      files: {
+        "presentation/no-content-[n].superf" => <<~EOF
+          ––– script.rb –––
+          def build
+            render(n: 1, content: "")
+            render(n: 2)
+          end
+        EOF
+      },
+      expected_message: "Pipeline did not produce a `content` prop for ❰no-content-[n]❱",
+      expected_in_backtrace: ["《src_dir》/presentation/no-content-[n].superf:4:"]
+    )
+  end
+
+  def test_dynamic_path_escapes_output_folder
+    build_and_check_error(
+      files: {
+        "presentation/[path].superf" => <<~EOF
+          ––– script.rb –––
+          def build
+            render(path: "./foo", content: "")  # OK
+            render(path: "../bar", content: "") # Not OK
+          end
+        EOF
+      },
+      expected_message: "Item produced a dynamic output path that lands outsite the output folder",
+      expected_in_backtrace: ["《src_dir》/presentation/[path].superf:4:"]
+    )
+  end
+
   def test_missing_partial
     build_and_check_error(
       files: {
