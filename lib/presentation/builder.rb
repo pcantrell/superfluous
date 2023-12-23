@@ -52,14 +52,8 @@ module Superfluous
         @items_by_logical_path.values.each do |item|
           next if item.partial?
 
-          render_count = 0
           log_item_processing(item) do |log_output_file:|
             build_item(item, data:) do |context|
-              render_count += 1
-              if item.singleton? && render_count > 1
-                raise "Singleton #{item} attempted to render multiple times"
-              end
-
               output_file_relative = item.output_path(props: context.props)
               log_output_file.call(output_file_relative)
               output_file = (output_dir + output_file_relative).cleanpath
@@ -76,35 +70,56 @@ module Superfluous
               end
 
               output_file.parent.mkpath
-              File.write(output_file, content)
-            end
-            if item.singleton? && render_count != 1
-              raise "Singleton #{item} rendered #{render_count} times, but should have rendered" +
-                " exactly once. The most common cause for this is a script never calling `render`."
+               File.write(output_file, content)
             end
           end
         end
       end
 
-      def build_item(item, data:, props: {}, nested_content: nil, &final_step)
-        pipeline = item.pieces.reverse.reduce(final_step) do |next_pipeline_step, piece|
-          lambda do |context|  # context here will come from previous steps
-            context = context.with(
-              scope: item.scope_class.new(context:, next_pipeline_step:))
-            piece.renderer.render(context, &next_pipeline_step)
-          end
-        end
+    private
 
-        pipeline.call(
-          Renderer::Context.new(
-            props: { data: }.merge(props),
-            scope: nil,  # each pipeline step will get its own scope object
-            nested_content:,
-            partial_renderer: lambda do |partial, **props, &block|
-              render_partial(partial, from_item: item, data:, **props, &block)
+      def build_item(item, data:, props: {}, nested_content: nil, &final_step)
+        check_output_count(item) do |count_output|
+          final_step_with_count = lambda do |*args|
+            count_output.call
+            final_step.call(*args)
+          end
+
+          pipeline = item.pieces.reverse.reduce(final_step_with_count) do |next_pipeline_step, piece|
+            lambda do |context|  # context here will come from previous steps
+              context = context.with(
+                scope: item.scope_class.new(context:, next_pipeline_step:))
+              piece.renderer.render(context, &next_pipeline_step)
             end
+          end
+
+          pipeline.call(
+            Renderer::Context.new(
+              props: { data: }.merge(props),
+              scope: nil,  # each pipeline step will get its own scope object
+              nested_content:,
+              partial_renderer: lambda do |partial, **props, &block|
+                render_partial(partial, from_item: item, data:, **props, &block)
+              end
+            )
           )
-        )
+        end
+      end
+
+      def check_output_count(item, &build)
+        output_count = 0
+
+        yield(Proc.new do
+          output_count += 1
+          if item.singleton? && output_count > 1
+            raise "Singleton #{item} attempted to render multiple times"
+          end
+        end)
+
+        if item.singleton? && output_count != 1
+          raise "Singleton #{item} rendered #{output_count} times, but should have rendered" +
+            " exactly once. The most common cause for this is a script never calling `render`."
+        end
       end
 
       # Messy logic for a simple purpose: show a nicely formatted build tree, with multi-output
@@ -147,7 +162,7 @@ module Superfluous
 
             result = nil
             build_item(partial_item, data:, props:, nested_content:) do |context|
-              # TODO: move render_count checking into shared code, use it here
+              # TODO: move output_count checking into shared code, use it here
               result = context.props[:content].html_safe
             end
             return result

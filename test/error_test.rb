@@ -131,6 +131,52 @@ class ErrorTest < SuperfluousTest
     )
   end
 
+  def test_no_render_in_partial
+    build_and_check_error(
+      files: {
+        "presentation/_no-render.superf" => <<~EOF
+          ––– script.rb –––
+          def build; end
+          ––– template.haml –––
+          partial here
+        EOF
+      }.merge(
+        "presentation/main.superf" => <<~EOF
+          ––– template.haml –––
+          %p= partial 'no-render'
+        EOF
+      ),
+      expected_message: "Singleton ❰_no-render❱ rendered 0 times, but should have rendered exactly once",
+      expected_in_backtrace: ["《src_dir》/presentation/main.superf:2:"]
+    )
+  end
+
+  def test_double_render_in_partial
+    build_and_check_error(
+      files: {
+        "presentation/_double-render.superf" => <<~EOF
+          ––– script.rb –––
+          def build
+            render(foo: 1)
+            render(foo: 2)
+          end
+          ––– template.haml –––
+          partial here \#{foo}
+        EOF
+      }.merge(
+        "presentation/main.superf" => <<~EOF
+          ––– template.haml –––
+          %p= partial 'double-render'
+        EOF
+      ),
+      expected_message: "Singleton ❰_double-render❱ attempted to render multiple times",
+      expected_in_backtrace: [
+        "《src_dir》/presentation/_double-render.superf:4:",
+        "《src_dir》/presentation/main.superf:2:",
+      ]
+    )
+  end
+
   def test_no_content
     build_and_check_error(
       files: {
