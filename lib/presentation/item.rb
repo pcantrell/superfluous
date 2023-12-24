@@ -39,9 +39,7 @@ module Superfluous
       attr_reader :logical_path, :scope_class
 
       def add_piece(piece)
-        unless PROCESSING_ORDER.include?(piece.kind)
-          raise "Kind #{piece.kind.inspect} does not appear in processing order"
-        end
+        Item.verify_kind!(piece.kind)
           
         if existing_piece = @pieces_by_kind[piece.kind]
           raise "Conflicting `#{piece.kind}` piece for item #{self}:" +
@@ -51,6 +49,12 @@ module Superfluous
         @pieces_by_kind[piece.kind] = piece
 
         piece.renderer.attach_to(self)
+      end
+
+      def self.verify_kind!(kind)
+        unless PROCESSING_ORDER.include?(kind)
+          raise "Unknown kind of piece: #{kind}"
+        end
       end
 
       PROCESSING_ORDER = [:script, :template, :style]

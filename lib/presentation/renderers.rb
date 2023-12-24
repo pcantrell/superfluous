@@ -30,16 +30,11 @@ module Superfluous
       end
 
       def self.read_piece(kind:, source:, logical_path:, &block)
-        unless RENDERER_TYPES.any? { |t| t.possible_kinds.include?(kind) }
-          raise "Unknown kind of piece: #{kind}"
-        end
+        Item.verify_kind!(kind)
 
         RENDERER_TYPES.each do |renderer_type|
-          if :success == renderer_type.read_piece(kind:, source:, logical_path:, &block)
-            return :success
-          end
+          return if :success == renderer_type.read_piece(kind:, source:, logical_path:, &block)
         end
-
         raise "Unsupported #{kind} extension #{source.ext.inspect} at #{source}"
       end
 
@@ -61,7 +56,6 @@ module Superfluous
 
       class Base
         def self.read_piece(kind:, source:, logical_path:, &block)
-          return :unrecognized unless possible_kinds.include?(kind)
           return :unrecognized unless renderer = renderer_for(kind:, source:)
           yield(logical_path:, piece: Piece.new(kind:, source:, renderer:))
           return :success
@@ -71,7 +65,7 @@ module Superfluous
         end
       end
 
-      class SuperfluousFile < Base
+      class SuperfluousFile
         def self.infer_pieces(source, &block)
           return :unrecognized unless source.ext == ".superf"
           logical_path = source.relative_path.sub_ext("")
@@ -98,12 +92,9 @@ module Superfluous
           return :success
         end
 
-        def self.possible_kinds
-          []  # A .superf file can only be a container for pieces, not a piece until itself
-        end
-
-        def self.renderer_for(kind:, source:)
-          nil
+        def self.read_piece(kind:, source:, logical_path:, &block)
+          # A .superf file can only be a container for pieces, not a piece until itself
+          :unrecognized
         end
 
       private
@@ -125,11 +116,8 @@ module Superfluous
           )
         end
 
-        def self.possible_kinds
-          [:template]
-        end
-
         def self.renderer_for(kind:, source:)
+          return unless kind == :template
           # TODO: fix possible symlink issue on next line (should context be source or target dir?)
           Dir.chdir(source.full_path.parent) do  # for relative includes (e.g. sass) embedded in template
             return unless template_class = Tilt.template_for(source.ext)
@@ -164,12 +152,8 @@ module Superfluous
           read_piece(kind: :template, source:, logical_path: source.relative_path, &block)
         end
 
-        def self.possible_kinds
-          [:template]
-        end
-
         def self.renderer_for(kind:, source:)
-          self.new(source)
+          self.new(source) if kind == :template
         end
 
         def initialize(source)
@@ -189,12 +173,8 @@ module Superfluous
           return :unrecognized
         end
 
-        def self.possible_kinds
-          [:script]
-        end
-
         def self.renderer_for(kind:, source:)
-          self.new(source) if source.ext == ".rb"
+          self.new(source) if kind == :script && source.ext == ".rb"
         end
 
         def initialize(source)
@@ -226,13 +206,9 @@ module Superfluous
           return :unrecognized
         end
 
-        def self.possible_kinds
-          [:style]
-        end
-
         def self.renderer_for(kind:, source:)
           # TiltTemplate.renderer_for(kind:, source:).render → CSS pool
-          self.new(source)
+          self.new(source) if kind == :style
         end
 
         def initialize(source)
