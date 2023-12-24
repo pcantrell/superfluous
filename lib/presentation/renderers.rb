@@ -18,9 +18,9 @@ module Superfluous
       #
       def self.each_piece(source, &block)
         if match = source.relative_path.to_s.match(/^(?<prefix> .* ) \+ #{KIND_AND_EXT} $/x)
-          read_piece(
-            source:,
+          read_single_piece(
             kind: match[:kind].to_sym,
+            source:,
             logical_path: Pathname.new(match[:prefix]),
             &block
           )
@@ -29,11 +29,16 @@ module Superfluous
         end
       end
 
-      def self.read_piece(kind:, source:, logical_path:, &block)
+      # Interprets the source as a piece of the given kind. Either yields exactly once (an item can
+      # only have one piece of a given kind, so yielding multiple times would always cause an error
+      # downstream), or raises an exception.
+      #
+      def self.read_single_piece(kind:, source:, logical_path:, &block)
         Item.verify_kind!(kind)
 
         RENDERER_TYPES.each do |renderer_type|
-          return if :success == renderer_type.read_piece(kind:, source:, logical_path:, &block)
+          result = renderer_type.try_read_single_piece(kind:, source:, logical_path:, &block)
+          return if result == :success
         end
         raise "Unsupported #{kind} extension #{source.ext.inspect} at #{source}"
       end
@@ -45,17 +50,24 @@ module Superfluous
       #
       def self.infer_pieces(source, &block)
         RENDERER_TYPES.each do |renderer_type|
-          case result = renderer_type.infer_pieces(source, &block)
+          case result = renderer_type.try_infer_pieces(source, &block)
             when :success      then return
             when :unrecognized then next
             else raise "Incorrect return value from #{renderer_type}.infer_pieces: #{result.inspect}"
           end
         end
-        raise "Don’t know how to handle item at #{source}"  # TODO: test once pipeline is customizable
+        # Currently unreachable because PassThrough will always infer that everything is a template
+        # TODO: test once pipeline is customizable
+        raise "Don’t know how to handle item at #{source}"
       end
 
       class Base
-        def self.read_piece(kind:, source:, logical_path:, &block)
+        # Attempts to use this renderer to interpret the given source as a piece of the given kind.
+        # Either yields one piece and returns :success, or return :unrecognized (does not raise).
+        #
+        # This default implementation delegates to a renderer_for method in the subclass.
+        #
+        def self.try_read_single_piece(kind:, source:, logical_path:, &block)
           return :unrecognized unless renderer = renderer_for(kind:, source:)
           yield(logical_path:, piece: Piece.new(kind:, source:, renderer:))
           return :success
@@ -66,7 +78,7 @@ module Superfluous
       end
 
       class SuperfluousFile
-        def self.infer_pieces(source, &block)
+        def self.try_infer_pieces(source, &block)
           return :unrecognized unless source.ext == ".superf"
           logical_path = source.relative_path.sub_ext("")
 
@@ -87,13 +99,13 @@ module Superfluous
               content: scanner.scan_until(NEXT_FENCE)
             )
 
-            Renderer.read_piece(source: section, kind:, logical_path:, &block)
+            Renderer.read_single_piece(source: section, kind:, logical_path:, &block)
           end
           return :success
         end
 
-        def self.read_piece(kind:, source:, logical_path:, &block)
-          # A .superf file can only be a container for pieces, not a piece until itself
+        def self.try_read_single_piece(kind:, source:, logical_path:, &block)
+          # A .superf file can only be a container for pieces, not a whole piece unto itself
           :unrecognized
         end
 
@@ -107,10 +119,10 @@ module Superfluous
       # Handles template files: Haml, Erb, Sass, etc.
       #
       class TiltTemplate < Base
-        def self.infer_pieces(source, &block)
-          read_piece(
+        def self.try_infer_pieces(source, &block)
+          try_read_single_piece(
             source:,
-            kind: :template,
+            kind: :template,  # If Tilt supports the file format, infer that it’s a template
             logical_path: source.relative_path.sub_ext(""),
             &block
           )
@@ -118,9 +130,10 @@ module Superfluous
 
         def self.renderer_for(kind:, source:)
           return unless kind == :template
+          return unless template_class = Tilt.template_for(source.ext)
+
           # TODO: fix possible symlink issue on next line (should context be source or target dir?)
           Dir.chdir(source.full_path.parent) do  # for relative includes (e.g. sass) embedded in template
-            return unless template_class = Tilt.template_for(source.ext)
             self.new(
               template_class.new(source.full_path, source.line_num) do
                 source.content
@@ -147,9 +160,9 @@ module Superfluous
       # Static assets copied through without modification
       #
       class PassThrough < Base
-        def self.infer_pieces(source, &block)
-          # Anything can be a static asset. Assume template; don't strip ext for logical path.
-          read_piece(kind: :template, source:, logical_path: source.relative_path, &block)
+        def self.try_infer_pieces(source, &block)
+          # Anything can be a static asset. Treat as a template; don't strip ext for logical path.
+          try_read_single_piece(kind: :template, source:, logical_path: source.relative_path, &block)
         end
 
         def self.renderer_for(kind:, source:)
@@ -167,9 +180,9 @@ module Superfluous
       end
 
       class RubyScript < Base
-        def self.infer_pieces(source, &block)
+        def self.try_infer_pieces(source, &block)
           # A bare .rb file doesn’t count as a script. Scripts are never inferred; they must always
-          # explicitly be in a script.rb section of of a .superf file, or a +script.rb file.
+          # explicitly be in a script.rb section of of a .superf file, or in a +script.rb file.
           return :unrecognized
         end
 
@@ -201,8 +214,9 @@ module Superfluous
         end
       end
 
+      # Shim impl for now
       class StyleAttachment < Base
-        def self.infer_pieces(source, &block)
+        def self.try_infer_pieces(source, &block)
           return :unrecognized
         end
 
