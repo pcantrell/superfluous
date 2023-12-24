@@ -20,7 +20,7 @@ module Superfluous
           source = Source.new(root_dir: presentation_dir, relative_path:)
           next if source.full_path.directory?
 
-          Renderer.read(source) do |logical_path:, piece:|
+          Renderer.each_piece(source) do |logical_path:, piece:|
             item = @items_by_logical_path[logical_path] ||=
               Item.new(logical_path, Class.new(Renderer::RenderingScope))
             item.add_piece(piece)

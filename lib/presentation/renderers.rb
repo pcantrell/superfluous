@@ -10,9 +10,54 @@ module Superfluous
         end
       end
 
-      def self.read(source, &block)
+      KIND_AND_EXT = /(?<kind> \w+ ) (?<ext> \. \w+)/x
+
+      # Yields one or more pieces from the given source. If the source’s path has a `+kind.ext`
+      # suffix, this method returns a single piece of that explicitly expressed kind (exactly as in
+      # a .superf file). Otherwise, this method infers what kind(s) of piece(s) the source contains.
+      #
+      def self.each_piece(source, &block)
+        if match = source.relative_path.to_s.match(/^(?<prefix> .* ) \+ #{KIND_AND_EXT} $/x)
+          read_piece(
+            source:,
+            kind: match[:kind].to_sym,
+            logical_path: Pathname.new(match[:prefix]),
+            &block
+          )
+        else
+          infer_pieces(source, &block)
+        end
+      end
+
+      def self.read_piece(kind:, source:, logical_path:, &block)
+        renderer = case kind
+          when :script
+            RubyScript.new(source) if source.ext == ".rb"
+          when :style  # temporary shim for test site; TODO: implement CSS bundling as plugin
+            StyleAttachment.new(source)
+          when :template
+            TiltTemplate.renderer_for(source)
+          else
+            PassThrough.new(source)  # ignore unknown type; Item.add_piece will flag it
+        end
+        unless renderer
+          raise "Unsupported #{kind} type #{source.ext.inspect} at #{source}"
+        end
+        yield(logical_path:, piece: Piece.new(kind:, source:, renderer:))
+      end
+
+      # Attempts to infer the kind of the source from its file ext. Yields once for each recognized
+      # piece within the source (because .superf files may contain multiple pieces). Treats sources
+      # with no other matching handler as static assets by returning a template piece with a
+      # pass-through renderer.
+      #
+      def self.infer_pieces(source, &block)
         [SuperfluousFile, TiltTemplate, PassThrough].each do |renderer_type|
-          return if renderer_type.read(source, &block)
+          case result = renderer_type.infer_pieces(source, &block)
+            when :success      then return
+            when :unrecognized then next
+            else raise "Incorrect return value from #{renderer_type}.infer_pieces: #{result.inspect}"
+          end
         end
         raise "Don’t know how to handle item at #{source}"  # TODO: test once pipeline is customizable
       end
@@ -23,8 +68,9 @@ module Superfluous
       end
 
       class SuperfluousFile < Base
-        def self.read(source, &block)
-          return unless source.ext == ".superf"
+        def self.infer_pieces(source, &block)
+          return :unrecognized unless source.ext == ".superf"
+          logical_path = source.relative_path.sub_ext("")
 
           scanner = StringScanner.new(source.content)
           
@@ -43,22 +89,7 @@ module Superfluous
               content: scanner.scan_until(NEXT_FENCE)
             )
 
-            renderer =
-              if kind == :script  # TODO: recurse back to read instead? shouldn't be .superf special case
-                RubyScript.new(section) if ext == "rb"
-              elsif kind == :style  # temporary shim for test site; TODO: implement CSS bundling as plugin
-                PassThrough.new(section.content)
-              else
-                TiltTemplate.read_template(section)
-              end
-
-            unless renderer
-              raise "Unsupported #{kind} type #{ext.inspect} at #{section}"
-            end
-
-            yield(
-              logical_path: section.relative_path.sub_ext(""),
-              piece: Piece.new(kind:, source: section, renderer:))
+            Renderer.read_piece(source: section, kind:, logical_path:, &block)
           end
           return :success
         end
@@ -67,14 +98,14 @@ module Superfluous
 
         FENCE_BAR = / *[-–]{3,}\s*/
         NEXT_FENCE = /^ (?=#{FENCE_BAR}) | \z /x
-        FENCE = /^ #{FENCE_BAR} (?<kind>\w+)\.(?<ext>\w+?) #{FENCE_BAR} $/x
+        FENCE = /^ #{FENCE_BAR} #{KIND_AND_EXT} #{FENCE_BAR} $/x
       end
 
       # Handles template files: Haml, Erb, Sass, etc.
       #
       class TiltTemplate < Base
-        def self.read(source, &block)
-          return unless renderer = read_template(source)
+        def self.infer_pieces(source, &block)
+          return :unrecognized unless renderer = renderer_for(source)
           yield(
             logical_path: source.relative_path.sub_ext(""),
             piece: Piece.new(kind: :template, source:, renderer:)
@@ -82,10 +113,10 @@ module Superfluous
           return :success
         end
 
-        def self.read_template(source)
+        def self.renderer_for(source)
           # TODO: fix possible symlink issue on next line (should context be source or target dir?)
           Dir.chdir(source.full_path.parent) do  # for relative includes (e.g. sass) embedded in template
-            return nil unless template_class = Tilt.template_for(source.ext)
+            return unless template_class = Tilt.template_for(source.ext)
             self.new(
               template_class.new(source.full_path, source.line_num) do
                 source.content
@@ -109,19 +140,19 @@ module Superfluous
         end
       end
 
-      # Handler for unprocessed file exts
+      # Static assets copied through without modification
       #
       class PassThrough < Base
-        def self.read(source, &block)
+        def self.infer_pieces(source, &block)
           yield(
             logical_path: source.relative_path,  # Don't strip ext for raw files
-            piece: Piece.new(kind: :template, source:, renderer: self.new(source.content))
+            piece: Piece.new(kind: :template, source:, renderer: self.new(source))
           )
           return :success
         end
 
-        def initialize(content)
-          @content = content
+        def initialize(source)
+          @content = source.content
         end
 
         def render(context)
@@ -155,6 +186,15 @@ module Superfluous
         end
       end
 
+      class StyleAttachment < Base
+        def initialize(source)
+        end
+
+        def render(context)
+          yield(context)
+        end
+      end
+
       # Methods used by presentation scripts and templates live in a dynamically generated subclass
       # of this class. That covers:
       #
@@ -179,11 +219,5 @@ module Superfluous
         end
       end
     end
-  end
-end
-
-class StringScanner
-  def line_number
-    string.byteslice(0, pos).count("\n") + 1  # inefficient, but… ¯\_(ツ)_/¯
   end
 end

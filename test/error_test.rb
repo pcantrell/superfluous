@@ -321,7 +321,7 @@ class ErrorTest < SuperfluousTest
       files: {
         "presentation/foo.superf" => "\n\n\n\n––– script.frax –––\nyup"
       },
-      expected_message: 'Unsupported script type "frax" at 《src_dir》/presentation/foo.superf:5'
+      expected_message: 'Unsupported script type ".frax" at 《src_dir》/presentation/foo.superf:5'
     )
   end
 
@@ -330,7 +330,7 @@ class ErrorTest < SuperfluousTest
       files: {
         "presentation/foo.superf" => "\n\n\n\n\n––– template.frax –––\nyup"
       },
-      expected_message: 'Unsupported template type "frax" at 《src_dir》/presentation/foo.superf:6'
+      expected_message: 'Unsupported template type ".frax" at 《src_dir》/presentation/foo.superf:6'
     )
   end
 
