@@ -39,7 +39,9 @@ module Superfluous
       attr_reader :logical_path, :scope_class
 
       def add_piece(piece)
-        raise "Unknown kind of piece: #{piece.kind}" unless PROCESSING_ORDER.include?(piece.kind)
+        unless PROCESSING_ORDER.include?(piece.kind)
+          raise "Kind #{piece.kind.inspect} does not appear in processing order"
+        end
           
         if existing_piece = @pieces_by_kind[piece.kind]
           raise "Conflicting `#{piece.kind}` piece for item #{self}:" +

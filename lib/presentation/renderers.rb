@@ -30,20 +30,17 @@ module Superfluous
       end
 
       def self.read_piece(kind:, source:, logical_path:, &block)
-        renderer = case kind
-          when :script
-            RubyScript.new(source) if source.ext == ".rb"
-          when :style  # temporary shim for test site; TODO: implement CSS bundling as plugin
-            StyleAttachment.new(source)
-          when :template
-            TiltTemplate.renderer_for(source)
-          else
-            PassThrough.new(source)  # ignore unknown type; Item.add_piece will flag it
+        unless RENDERER_TYPES.any? { |t| t.possible_kinds.include?(kind) }
+          raise "Unknown kind of piece: #{kind}"
         end
-        unless renderer
-          raise "Unsupported #{kind} type #{source.ext.inspect} at #{source}"
+
+        RENDERER_TYPES.each do |renderer_type|
+          if :success == renderer_type.read_piece(kind:, source:, logical_path:, &block)
+            return :success
+          end
         end
-        yield(logical_path:, piece: Piece.new(kind:, source:, renderer:))
+
+        raise "Unsupported #{kind} extension #{source.ext.inspect} at #{source}"
       end
 
       # Attempts to infer the kind of the source from its file ext. Yields once for each recognized
@@ -52,7 +49,7 @@ module Superfluous
       # pass-through renderer.
       #
       def self.infer_pieces(source, &block)
-        [SuperfluousFile, TiltTemplate, PassThrough].each do |renderer_type|
+        RENDERER_TYPES.each do |renderer_type|
           case result = renderer_type.infer_pieces(source, &block)
             when :success      then return
             when :unrecognized then next
@@ -63,6 +60,13 @@ module Superfluous
       end
 
       class Base
+        def self.read_piece(kind:, source:, logical_path:, &block)
+          return :unrecognized unless possible_kinds.include?(kind)
+          return :unrecognized unless renderer = renderer_for(kind:, source:)
+          yield(logical_path:, piece: Piece.new(kind:, source:, renderer:))
+          return :success
+        end
+
         def attach_to(item)
         end
       end
@@ -94,6 +98,14 @@ module Superfluous
           return :success
         end
 
+        def self.possible_kinds
+          []  # A .superf file can only be a container for pieces, not a piece until itself
+        end
+
+        def self.renderer_for(kind:, source:)
+          nil
+        end
+
       private
 
         FENCE_BAR = / *[-–]{3,}\s*/
@@ -105,15 +117,19 @@ module Superfluous
       #
       class TiltTemplate < Base
         def self.infer_pieces(source, &block)
-          return :unrecognized unless renderer = renderer_for(source)
-          yield(
+          read_piece(
+            source:,
+            kind: :template,
             logical_path: source.relative_path.sub_ext(""),
-            piece: Piece.new(kind: :template, source:, renderer:)
+            &block
           )
-          return :success
         end
 
-        def self.renderer_for(source)
+        def self.possible_kinds
+          [:template]
+        end
+
+        def self.renderer_for(kind:, source:)
           # TODO: fix possible symlink issue on next line (should context be source or target dir?)
           Dir.chdir(source.full_path.parent) do  # for relative includes (e.g. sass) embedded in template
             return unless template_class = Tilt.template_for(source.ext)
@@ -144,11 +160,16 @@ module Superfluous
       #
       class PassThrough < Base
         def self.infer_pieces(source, &block)
-          yield(
-            logical_path: source.relative_path,  # Don't strip ext for raw files
-            piece: Piece.new(kind: :template, source:, renderer: self.new(source))
-          )
-          return :success
+          # Anything can be a static asset. Assume template; don't strip ext for logical path.
+          read_piece(kind: :template, source:, logical_path: source.relative_path, &block)
+        end
+
+        def self.possible_kinds
+          [:template]
+        end
+
+        def self.renderer_for(kind:, source:)
+          self.new(source)
         end
 
         def initialize(source)
@@ -162,6 +183,20 @@ module Superfluous
       end
 
       class RubyScript < Base
+        def self.infer_pieces(source, &block)
+          # A bare .rb file doesn’t count as a script. Scripts are never inferred; they must always
+          # explicitly be in a script.rb section of of a .superf file, or a +script.rb file.
+          return :unrecognized
+        end
+
+        def self.possible_kinds
+          [:script]
+        end
+
+        def self.renderer_for(kind:, source:)
+          self.new(source) if source.ext == ".rb"
+        end
+
         def initialize(source)
           @source = source
         end
@@ -187,6 +222,19 @@ module Superfluous
       end
 
       class StyleAttachment < Base
+        def self.infer_pieces(source, &block)
+          return :unrecognized
+        end
+
+        def self.possible_kinds
+          [:style]
+        end
+
+        def self.renderer_for(kind:, source:)
+          # TiltTemplate.renderer_for(kind:, source:).render → CSS pool
+          self.new(source)
+        end
+
         def initialize(source)
         end
 
@@ -194,6 +242,9 @@ module Superfluous
           yield(context)
         end
       end
+
+      # TODO: configurable per project?
+      RENDERER_TYPES = [SuperfluousFile, RubyScript, TiltTemplate, StyleAttachment, PassThrough]
 
       # Methods used by presentation scripts and templates live in a dynamically generated subclass
       # of this class. That covers:
