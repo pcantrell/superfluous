@@ -73,6 +73,20 @@ module Superfluous
           return :success
         end
 
+        # Subclasses can override to extract pieces from an arbitrary file (e.g. to treat any `.erb`
+        # file as an ERB template).
+        #
+        # By default, renderers never infer that they can handle a given file by extension alone;
+        # they will only consider an explicitly specified kind: either in a kind.ext section of of a
+        # .superf file, or in a file whose name ends with +kind.ext.
+        #
+        def self.try_infer_pieces(source, &block)
+          return :unrecognized
+        end
+
+        # Runs exactly once at the start of rendering for a specific item (no matter how many
+        # outputs the item produces). Does nothing by default.
+        #
         def attach_to(item)
         end
       end
@@ -161,7 +175,7 @@ module Superfluous
       #
       class PassThrough < Base
         def self.try_infer_pieces(source, &block)
-          # Anything can be a static asset. Treat as a template; don't strip ext for logical path.
+          # Anything can be a static asset. Treat as a template; don’t strip ext for logical path.
           try_read_single_piece(kind: :template, source:, logical_path: source.relative_path, &block)
         end
 
@@ -180,12 +194,6 @@ module Superfluous
       end
 
       class RubyScript < Base
-        def self.try_infer_pieces(source, &block)
-          # A bare .rb file doesn’t count as a script. Scripts are never inferred; they must always
-          # explicitly be in a script.rb section of of a .superf file, or in a +script.rb file.
-          return :unrecognized
-        end
-
         def self.renderer_for(kind:, source:)
           self.new(source) if kind == :script && source.ext == ".rb"
         end
@@ -216,10 +224,6 @@ module Superfluous
 
       # Shim impl for now
       class StyleAttachment < Base
-        def self.try_infer_pieces(source, &block)
-          return :unrecognized
-        end
-
         def self.renderer_for(kind:, source:)
           # TiltTemplate.renderer_for(kind:, source:).render → CSS pool
           self.new(source) if kind == :style
