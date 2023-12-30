@@ -268,6 +268,10 @@ module Superfluous
           @partial_renderer = partial_renderer
         end
 
+        def build
+          render
+        end
+
         def partial(partial, **props, &block)
           @partial_renderer.call(partial, **props, &block)
         end

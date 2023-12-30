@@ -346,15 +346,6 @@ class ErrorTest < SuperfluousTest
     )
   end
 
-  def test_script_without_build_method
-    build_and_check_error(
-      files: {
-        "presentation/foo.superf" => "\n––– script.rb –––\ndef blag; end",
-      },
-      expected_message: "Script does not define a `build` method: 《src_dir》/presentation/foo.superf:2"
-    )
-  end
-
   def test_data_not_a_dir
     build_and_check_error(
       files: { "data" => "" },

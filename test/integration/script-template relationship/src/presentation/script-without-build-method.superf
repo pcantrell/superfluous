@@ -1,0 +1,9 @@
+––– script.rb –––
+
+def blag
+  "BLAG!"
+end
+
+––– template.erb –––
+
+GLAB backards is <%= blag %>
