@@ -49,6 +49,7 @@ module Superfluous
       #
       def build(data:, output_dir:)
         output_dir = output_dir.realpath
+
         @items_by_logical_path.values.each do |item|
           next if item.partial?
 
@@ -80,6 +81,8 @@ module Superfluous
 
       def build_item(item, data:, props: {}, nested_content: nil, &final_step)
         check_output_count(item) do |count_output|
+          item.ensure_prepared!
+
           final_step_with_count = lambda do |*args|
             count_output.call
             final_step.call(*args)

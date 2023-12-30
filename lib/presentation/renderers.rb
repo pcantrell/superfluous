@@ -84,10 +84,12 @@ module Superfluous
           return :unrecognized
         end
 
-        # Runs exactly once at the start of rendering for a specific item (no matter how many
-        # outputs the item produces). Does nothing by default.
+        # Runs exactly once per project build for each item that is rendered, before the first
+        # render but after the item pipeline is fully configured. May not run for unused partials.
         #
-        def attach_to(item)
+        # Does nothing by default. Subclasses may override.
+        #
+        def prepare(item)
         end
       end
 
@@ -161,13 +163,18 @@ module Superfluous
         end
 
         def render(context)
-          context.props[:content] = @tilt_template.render(context.scope, context.props) do
+          yield(context.with(
+            props: context.props.merge(
+              content: render_to_string(context))))
+        end
+
+        def render_to_string(context)
+          @tilt_template.render(context.scope, context.props) do
             if context.nested_content.nil?
               raise "Template called yield, but no nested content given"
             end
             context.nested_content.call.html_safe
           end
-          yield(context)
         end
       end
 
@@ -202,7 +209,7 @@ module Superfluous
           @source = source
         end
 
-        def attach_to(item)
+        def prepare(item)
           item.scope_class.class_eval(@source.content, @source.full_path.to_s, @source.line_num)
 
           unless item.scope_class.instance_methods.include?(:build)
@@ -225,11 +232,19 @@ module Superfluous
       # Shim impl for now
       class StyleAttachment < Base
         def self.renderer_for(kind:, source:)
-          # TiltTemplate.renderer_for(kind:, source:).render → CSS pool
           self.new(source) if kind == :style
         end
 
         def initialize(source)
+          @source = source
+        end
+
+        def prepare(item)
+          # TODO: make data available here?
+          # TODO: raise helpful errors for unknown format
+          # TODO: warn if not CSS
+          puts TiltTemplate.renderer_for(kind: :template, source: @source)
+            .render_to_string(Context.new(props: {}, scope: nil, nested_content: nil))
         end
 
         def render(context)

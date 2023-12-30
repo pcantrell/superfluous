@@ -47,8 +47,6 @@ module Superfluous
         end
 
         @pieces_by_kind[piece.kind] = piece
-
-        piece.renderer.attach_to(self)
       end
 
       def self.verify_kind!(kind)
@@ -83,6 +81,13 @@ module Superfluous
               " available props are: #{props.keys.join(', ')}"
           end
           props[key]
+        end
+      end
+
+      def ensure_prepared!
+        @prepared ||= begin
+          pieces.each { |piece| piece.renderer.prepare(self) }
+          :prepared
         end
       end
 
