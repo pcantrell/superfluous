@@ -85,11 +85,20 @@ module Superfluous
             final_step.call(*args)
           end
 
-          pipeline = item.pieces.reverse.reduce(final_step_with_count) do |next_pipeline_step, piece|
+          partial_renderer = lambda do |partial, **props, &block|
+            render_partial(partial, from_item: item, data:, **props, &block)
+          end
+
+          pipeline = item.pieces.reverse.reduce(final_step_with_count) do |next_step, piece|
             lambda do |context|  # context here will come from previous steps
-              context = context.with(
-                scope: item.scope_class.new(context:, next_pipeline_step:))
-              piece.renderer.render(context, &next_pipeline_step)
+              renderer = lambda do |**props_from_script|
+                next_step.call(
+                  context.override_props(**props_from_script))
+              end
+
+              new_context = context.with(
+                scope: item.scope_class.new(renderer:, partial_renderer:))
+              piece.renderer.render(new_context, &next_step)
             end
           end
 
@@ -97,10 +106,7 @@ module Superfluous
             Renderer::Context.new(
               props: { data: }.merge(props),
               scope: nil,  # each pipeline step will get its own scope object
-              nested_content:,
-              partial_renderer: lambda do |partial, **props, &block|
-                render_partial(partial, from_item: item, data:, **props, &block)
-              end
+              nested_content:
             )
           )
         end

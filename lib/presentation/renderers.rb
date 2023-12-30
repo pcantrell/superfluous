@@ -4,7 +4,7 @@ require_relative 'item'
 module Superfluous
   module Presentation
     module Renderer
-      Context = ::Data.define(:props, :scope, :nested_content, :partial_renderer) do
+      Context = ::Data.define(:props, :scope, :nested_content) do
         def override_props(**overrides)
           with(props: props.merge(overrides))
         end
@@ -248,19 +248,17 @@ module Superfluous
       # - any custom methods defined by the script.
       #
       class RenderingScope
-        def initialize(context:, next_pipeline_step:)
-          @context = context
-          @next_pipeline_step = next_pipeline_step
+        def initialize(renderer:, partial_renderer:)
+          @renderer = renderer
+          @partial_renderer = partial_renderer
         end
 
         def partial(partial, **props, &block)
-          @context.partial_renderer.call(partial, **props, &block)
+          @partial_renderer.call(partial, **props, &block)
         end
 
         def render(**props_from_script)
-          @next_pipeline_step.call(
-            @context.override_props(**props_from_script)
-          )
+          @renderer.call(**props_from_script)
         end
       end
     end
