@@ -1,7 +1,7 @@
 require 'tilt'
 require 'active_support/all'
 require 'tmpdir'
-require_relative 'renderers'
+require_relative 'renderer'
 require_relative '../extensions'
 
 module Superfluous
