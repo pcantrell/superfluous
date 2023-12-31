@@ -19,7 +19,8 @@ module Superfluous
         @content || full_path.read
       end
 
-      def subsection(ext:, line_num: 1, content: nil)
+      def subsection(ext:, line_num: nil, content: nil)
+        line_num ||= self.line_num
         self.class.new(root_dir:, relative_path:, ext:, line_num:, content:)
       end
 

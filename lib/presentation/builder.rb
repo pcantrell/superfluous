@@ -16,6 +16,8 @@ module Superfluous
         @presentation_dir = presentation_dir
         @logger = logger
 
+        @concise_ids = {}
+
         @items_by_logical_path = {}  # logical path → Item
         Pathname.glob("**/*", base: presentation_dir) do |relative_path|
           source = Source.new(root_dir: presentation_dir, relative_path:)
@@ -43,6 +45,8 @@ module Superfluous
             FileUtils.mv tmp_dir.children, output_dir
           end
         end
+
+        return self
       end
 
       # Traverses and processes the presentation/ directory, replacing existing files in the output
@@ -77,6 +81,8 @@ module Superfluous
         @after_build_actions.reverse_each do |action|
           action.call
         end
+
+        return self
       end
 
       def after_build(&action)
@@ -105,6 +111,14 @@ module Superfluous
 
         output_file.parent.mkpath
         File.write(output_file, content, mode: write_mode)
+      end
+
+      def concise_id(*key)
+        @concise_ids[key] ||=
+          "superf_" + SecureRandom.base64(9)
+            .gsub("+", "-")
+            .gsub("/", "_")
+            .gsub("=", "")
       end
 
     private

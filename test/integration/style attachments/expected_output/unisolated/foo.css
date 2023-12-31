@@ -1,0 +1,6 @@
+/* subfolder/isolation-none.html */
+
+.foo {
+  background: blue; }
+  .foo .bar {
+    outline: 1px solid red; }

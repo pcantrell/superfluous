@@ -64,7 +64,7 @@ private
     return unless expected_output.exist?
 
     Dir.mktmpdir do |actual_output|
-      Superfluous::Project.new(project_dir:, output_dir: actual_output, logger:).build
+      @builder = Superfluous::Project.new(project_dir:, output_dir: actual_output, logger:).build
       assert_dirs_equal(expected_output, actual_output)
     end
   end
@@ -101,10 +101,24 @@ private
   # String comparison with line-based diff
   #
   def assert_text_equal(expected, actual, name)
+    actual = expand_concise_ids(actual)
     if expected.strip != actual.strip
       diff = Diffy::Diff.new(expected + "\n", actual + "\n").to_s(:color)
         .gsub(/\e\[3([12])m/) { "\e\[3#{3 - $1.to_i}m" }  # Swap red and green so correct = green
       fail "#{name} mismatch:\n#{ANSI.clear}#{diff}"
     end
   end
+
+  def expand_concise_ids(text)
+    if @builder
+      @builder.concise_ids.each do |key, id|
+        text.gsub!(id, "【" + key.join("|") + "】")
+      end
+    end
+    text
+  end
+end
+
+class Superfluous::Presentation::Builder
+  attr_reader :concise_ids  # backdoor access for normalizing generated IDs in output text
 end

@@ -1,0 +1,19 @@
+––– script.rb –––
+
+def self.style_config
+  {
+    output: "/css-nesting/bar.css",
+    isolation: :css_nesting
+  }
+end
+
+––– template.haml –––
+
+%p Howdy!
+
+––– style.sass –––
+
+.foo
+  background: blue
+  .bar
+    outline: 1px solid red

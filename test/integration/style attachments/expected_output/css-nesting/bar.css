@@ -1,0 +1,7 @@
+/* subfolder/isolation-css-nesting.html */
+
+.【Superfluous::Presentation::Renderer::StyleAttachment|style|subfolder/isolation-css-nesting.html】 .foo {
+  background: blue; }
+
+.【Superfluous::Presentation::Renderer::StyleAttachment|style|subfolder/isolation-css-nesting.html】 .foo .bar {
+  outline: 1px solid red; }
