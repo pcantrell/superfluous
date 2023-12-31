@@ -1,0 +1,17 @@
+––– script.rb –––
+
+def self.style_config
+  {
+    output: "/css-nesting/bartial.css",
+    isolation: :css_nesting
+  }
+end
+
+––– template.haml –––
+
+%b= message
+
+––– style.sass –––
+
+b
+  border: 1px solid green

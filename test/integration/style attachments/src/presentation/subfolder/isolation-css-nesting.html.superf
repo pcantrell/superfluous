@@ -8,8 +8,16 @@ def self.style_config
 end
 
 ––– template.haml –––
-
-%p Howdy!
+!!!
+%html
+  %head
+    %title Exciting page
+  %body
+    Some greetings with Y in them:
+    %ul
+      %li= partial "css-nesting-partial", message: "Ahoy"
+      %li= partial "css-nesting-partial", message: "Howdy"
+      %li= partial "css-nesting-partial", message: "Yo"
 
 ––– style.sass –––
 

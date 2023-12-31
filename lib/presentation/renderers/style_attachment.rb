@@ -13,10 +13,10 @@ module Superfluous
 
         ISOLATION_MODES = %i[none css_nesting shadow_dom].freeze
 
-        def prepare(context)
+        def prepare(ctx)
           config = { isolation: :none }
-          if context.item.scope_class.respond_to?(:style_config)
-            config.merge!(context.item.scope_class.style_config)
+          if ctx.item.scope_class.respond_to?(:style_config)
+            config.merge!(ctx.item.scope_class.style_config)
           end
 
           isolation_mode = config[:isolation].to_sym
@@ -25,55 +25,76 @@ module Superfluous
               " must be one of: #{ISOLATION_MODES.inspect}"
           end
 
-          output_path = (context.item.logical_relative(config[:output]) if config[:output])
+          output_path = (ctx.item.logical_relative(config[:output]) if config[:output])
           unless output_path
-            raise "#{context.item} must specify an output path for its style section"
+            raise "#{ctx.item} must specify an output path for its style section"
           end
 
-          self_id = context.builder.concise_id(self.class, :style, context.item.logical_path)
+          self_id = ctx.builder.concise_id(self.class, :style, ctx.item.logical_path)
 
-          css = render_css_template(@source, context)
+          css = render_css_template(@source, ctx)
 
           if :css_nesting == isolation_mode
-            @css_wrapper_class = self_id
+            @content_wrapper = ["<span class=\"#{self_id}\">", "</span>"]
             css = render_css_template(
               @source.subsection(
                 ext: ".scss",  # Use scss to distribute wrapper class to all selectors
-                content: ".#{@css_wrapper_class} { #{css} }"),
-              context
+                content: ".#{self_id} { #{css} }"),
+              ctx
             )
           end
 
-          css = "\n\n/* #{context.item.logical_path} */\n\n" + css
+          css = "\n\n/* #{ctx.item.logical_path} */\n\n" + css
 
           # Clear output file now, but give template item a chance to populate it before
           # attempting to append our own CSS
-          context.builder.output(output_path, "", existing: :overwrite)
+          ctx.builder.output(output_path, "", existing: :overwrite)
 
-          context.builder.after_build do
-            context.builder.output(output_path, css, existing: :append)
+          ctx.builder.after_build do
+            ctx.builder.output(output_path, css, existing: :append)
           end
         end
 
-        def render(context)
-          if @css_wrapper_class
-            context = context.override_props(
-              content: "<span class=\"#{@css_wrapper_class}\">" +
-                context.props[:content] +
-                "</span>"
+        FULL_HTML_DOC = %r{
+          (?<preamble> \A\s* <(!DOCTYPE|html) .*? <body.*?>)
+          (?<body_content> .* )
+          (?<postscript> </body\s*>.*\Z)
+        }mix
+
+        def render(ctx)
+          if @content_wrapper
+            content = ctx.props[:content]
+
+            if match = content.match(FULL_HTML_DOC)
+              body_content = match[:body_content]
+              preamble = match[:preamble]
+              postscript = match[:postscript]
+            else
+              body_content = content
+              preamble = postscript = nil
+            end
+
+            ctx = ctx.override_props(
+              content: [
+                preamble,
+                @content_wrapper[0],
+                body_content,
+                @content_wrapper[1],
+                postscript,
+              ].join
             )
           end
-          yield(context)
+          yield(ctx)
         end
 
-        def render_css_template(source, context)
+        def render_css_template(source, ctx)
           # TODO: make scope available here (for helper methods)?
           # TODO: raise helpful errors for unknown ext, warn if output is not CSS
           TiltTemplate
             .renderer_for(kind: :template, source:)
             .render_to_string(
               Renderer::RenderingContext.new(
-                props: { data: context.data },
+                props: { data: ctx.data },
                 scope: nil,
                 nested_content: nil))
         end
