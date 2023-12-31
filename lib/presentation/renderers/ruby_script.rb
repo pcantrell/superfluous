@@ -11,10 +11,10 @@ module Superfluous
           @source = source
         end
 
-        def prepare(item)
-          item.scope_class.class_eval(@source.content, @source.full_path.to_s, @source.line_num)
+        def prepare(context)
+          context.item.scope_class.class_eval(@source.content, @source.full_path.to_s, @source.line_num)
 
-          unless item.scope_class.instance_methods.include?(:build)
+          unless context.item.scope_class.instance_methods.include?(:build)
             raise "Script does not define a `build` method: #{@source}"
           end
         end

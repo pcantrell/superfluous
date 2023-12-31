@@ -3,8 +3,11 @@ require_relative 'item'
 
 module Superfluous
   module Presentation
+
     module Renderer
-      Context = ::Data.define(:props, :scope, :nested_content) do
+      PreparationContext = ::Data.define(:item, :data, :builder)
+
+      RenderingContext = ::Data.define(:props, :scope, :nested_content) do
         def override_props(**overrides)
           with(props: props.merge(overrides))
         end
@@ -87,7 +90,7 @@ module Superfluous
         #
         # Does nothing by default. Subclasses may override.
         #
-        def prepare(item)
+        def prepare(context)
         end
       end
 
@@ -121,6 +124,7 @@ module Superfluous
 
       KIND_AND_EXT_PATTERN = /(?<kind> \w+ ) (?<ext> \. \w+)/x
     end
+
   end
 end
 

@@ -6,6 +6,7 @@ require_relative '../extensions'
 
 module Superfluous
   module Presentation
+
     # Retains compiled scripts and templates, so create a new instance to pick up changes.
     #
     class Builder
@@ -48,7 +49,12 @@ module Superfluous
       # dir but leaving any extraneous / straggler files untouched.
       #
       def build(data:, output_dir:)
-        output_dir = output_dir.realpath
+        raise "Attempted to build twice with same Builder" if @used
+        @used = true
+
+        @output_dir = output_dir.realpath
+
+        @after_build_actions = []
 
         @items_by_logical_path.values.each do |item|
           next if item.partial?
@@ -57,31 +63,56 @@ module Superfluous
             build_item(item, data:) do |context|
               output_file_relative = item.output_path(props: context.props)
               log_output_file.call(output_file_relative)
-              output_file = (output_dir + output_file_relative).cleanpath
-              unless output_dir.contains?(output_file)
-                raise "Item produced a dynamic output path that lands outsite the output folder" +
-                  "\n  relative output path: #{output_file_relative}" +
-                  "\n           resolved to: #{output_file}" +
-                  "\n   which is outside of: #{output_dir}"
-              end
 
               unless content = context.props[:content]
                 raise "Pipeline did not produce a `content` prop for #{item}. When an item has" +
                   " only a script and no template, the script must call `render(content: ...)`."
               end
 
-              output_file.parent.mkpath
-               File.write(output_file, content)
+              output(output_file_relative, content)
             end
           end
         end
+
+        @after_build_actions.reverse_each do |action|
+          action.call
+        end
+      end
+
+      def after_build(&action)
+        @after_build_actions << action
+      end
+
+      def output(relative_path, content, existing: :overwrite)
+        output_file = (@output_dir + relative_path).cleanpath
+        unless @output_dir.contains?(output_file)
+          raise "Item produced a dynamic output path that lands outsite the output folder" +
+            "\n  relative output path: #{relative_path}" +
+            "\n           resolved to: #{output_file}" +
+            "\n   which is outside of: #{@output_dir}"
+        end
+
+        if existing == :error && output_file.exist?
+          raise "#{output_file} already exists"
+        end
+
+        write_mode =
+          case existing
+            when :overwrite, :error then "w"
+            when :append then "a"
+            else raise "Illegal value for `existing` param: #{existing.inspect}"
+          end
+
+        output_file.parent.mkpath
+        File.write(output_file, content, mode: write_mode)
       end
 
     private
 
       def build_item(item, data:, props: {}, nested_content: nil, &final_step)
         check_output_count(item) do |count_output|
-          item.ensure_prepared!
+          item.ensure_prepared!(
+            Renderer::PreparationContext.new(item:, data:, builder: self))
 
           final_step_with_count = lambda do |*args|
             count_output.call
@@ -106,7 +137,7 @@ module Superfluous
           end
 
           pipeline.call(
-            Renderer::Context.new(
+            Renderer::RenderingContext.new(
               props: { data: }.merge(props),
               scope: nil,  # each pipeline step will get its own scope object
               nested_content:
@@ -180,5 +211,6 @@ module Superfluous
         raise "No template found for partial #{partial} (Searched for #{searched_paths.join(', ')})"
       end
     end
+
   end
 end

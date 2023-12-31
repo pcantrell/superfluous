@@ -8,6 +8,14 @@ class Pathname
   def contains?(other)
     Array(other.descend).start_with?(Array(self.descend))
   end
+
+  def strip_leading_slash
+    if absolute?
+      relative_path_from("/")
+    else
+      self
+    end
+  end
 end
 
 class StringScanner

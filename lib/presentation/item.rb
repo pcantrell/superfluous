@@ -1,5 +1,6 @@
 module Superfluous
   module Presentation
+
     # A source of presentation content, either a whole file or a part of one
     #
     class Source
@@ -84,9 +85,14 @@ module Superfluous
         end
       end
 
-      def ensure_prepared!
+      def logical_relative(path)
+        (logical_path.parent + path)  # path can be absolute; if it is...
+          .strip_leading_slash        # ...turn absolute `/a/b/c` back into logical `a/b/c`
+      end
+
+      def ensure_prepared!(context)
         @prepared ||= begin
-          pieces.each { |piece| piece.renderer.prepare(self) }
+          pieces.each { |piece| piece.renderer.prepare(context) }
           :prepared
         end
       end
@@ -102,5 +108,6 @@ module Superfluous
     end
 
     Piece = ::Data.define(:kind, :source, :renderer)
+
   end
 end
