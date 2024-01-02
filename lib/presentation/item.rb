@@ -36,6 +36,8 @@ module Superfluous
         @logical_path = logical_path
         @scope_class = scope_class
         @pieces_by_kind = {}
+        @singleton = @logical_path.basename.to_s !~ PROP_PATTERN
+        @partial = logical_path.basename.to_s =~ PARTIAL_PATTERN
       end
 
       attr_reader :logical_path, :scope_class
@@ -64,11 +66,11 @@ module Superfluous
       end
 
       def partial?
-        logical_path.basename.to_s =~ PARTIAL_PATTERN
+        @partial
       end
 
       def singleton?
-        @logical_path.basename.to_s !~ PROP_PATTERN
+        @singleton
       end
 
       def partial_search_paths

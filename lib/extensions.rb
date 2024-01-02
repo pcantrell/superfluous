@@ -6,7 +6,9 @@ end
 
 class Pathname
   def contains?(other)
-    Array(other.descend).start_with?(Array(self.descend))
+    # TODO: This mishandles /a/foo and /a/fooo; the accurate version here is surprisingly slow:
+    # Array(other.descend).start_with?(Array(self.descend))
+    other.to_s.start_with?(self.to_s)
   end
 
   def strip_leading_slash
