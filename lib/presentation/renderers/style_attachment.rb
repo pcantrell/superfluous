@@ -11,7 +11,7 @@ module Superfluous
           @source = source
         end
 
-        ISOLATION_MODES = %i[none css_nesting shadow_dom].freeze
+        ISOLATION_MODES = %i[none css_nesting].freeze
 
         def prepare(ctx)
           config = { isolation: :none }
