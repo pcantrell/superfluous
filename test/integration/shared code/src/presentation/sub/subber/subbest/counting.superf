@@ -1,0 +1,18 @@
+––– script.rb –––
+
+def three
+  super + "!!!"
+end
+
+––– template.haml –––
+
+%ol
+  %li= one
+  %li= two
+  %li= three
+
+––– style.scss –––
+
+body {
+  background: black;
+}

@@ -19,16 +19,7 @@ module Superfluous
         @concise_ids = {}
 
         @items_by_logical_path = {}  # logical path → Item
-        Pathname.glob("**/*", base: presentation_dir) do |relative_path|
-          source = Source.new(root_dir: presentation_dir, relative_path:)
-          next if source.full_path.directory?
-
-          Renderer.each_piece(source) do |logical_path:, piece:|
-            item = @items_by_logical_path[logical_path] ||=
-              Item.new(logical_path, Class.new(Renderer::RenderingScope))
-            item.add_piece(piece)
-          end
-        end
+        read_items(presentation_dir)
       end
 
       # Renders a new version of the output to a tmp dir, then quickly swaps out the out entire
@@ -122,6 +113,39 @@ module Superfluous
       end
 
     private
+
+      DIR_SCRIPT_FILENAME = "_script.rb"
+
+      def read_items(
+        root_dir,
+        relative_subdir = Pathname(""),
+        scope_parent_class = Renderer::RenderingScope
+      )
+        dir_script_file = root_dir + relative_subdir + DIR_SCRIPT_FILENAME
+        if dir_script_file.exist?
+          scope_parent_class = Class.new(scope_parent_class) do |new_scope|
+            new_scope.class_eval(dir_script_file.read, dir_script_file.to_s)
+          end
+        end
+
+        Pathname.glob("*", base: root_dir + relative_subdir) do |child|
+          relative_path = relative_subdir + child
+          full_path = root_dir + relative_path
+
+          if full_path.directory?
+            read_items(root_dir, relative_path, scope_parent_class)
+          elsif child.to_s == DIR_SCRIPT_FILENAME
+            # Ignore script; we read it above
+          else
+            source = Source.new(root_dir:, relative_path:)
+            Renderer.each_piece(source) do |logical_path:, piece:|
+              item = @items_by_logical_path[logical_path] ||=
+                Item.new(logical_path, Class.new(scope_parent_class))
+              item.add_piece(piece)
+            end
+          end
+        end
+      end
 
       def build_item(item, data:, props: {}, nested_content: nil, &final_step)
         check_output_count(item) do |count_output|

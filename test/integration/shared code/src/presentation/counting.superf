@@ -1,0 +1,18 @@
+––– script.rb –––
+
+def two
+  "zwei"
+end
+
+––– template.haml –––
+
+%ol
+  %li= one
+  %li= two
+  %li= three
+
+––– style.scss –––
+
+body {
+  color: blue;
+}

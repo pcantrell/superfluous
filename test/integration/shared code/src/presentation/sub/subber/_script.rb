@@ -1,0 +1,3 @@
+def two
+  super + "!!"
+end
