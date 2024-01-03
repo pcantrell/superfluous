@@ -26,10 +26,9 @@ module Superfluous
       require 'adsf/live'
       require 'listen'
 
-      # Changes to any part of src/ cause rebuild
-      Listen.to(@project.src_dir, latency: 0.05, wait_for_delay: 0.2) do
-        build_guarded
-      end.start
+      # Changes to src/ cause rebuild
+      listen_to_project_dir(@project.data_dir)
+      listen_to_project_dir(@project.presentation_dir, use_existing_data: true)
 
       # Changes to Superfluous itself cause relaunch + rebuild (for development)
       Listen.to(Pathname.new(__dir__).parent) do
@@ -48,9 +47,15 @@ module Superfluous
       server.run
     end
 
-    def build_guarded
+    def listen_to_project_dir(dir, **opts)
+      Listen.to(dir, latency: 0.05, wait_for_delay: 0.2) do
+        build_guarded(**opts)
+      end.start
+    end
+
+    def build_guarded(**kwargs)
       begin
-        @project.build
+        @project.build(**kwargs)
       rescue SystemExit, Interrupt
         raise
       rescue Exception => e
