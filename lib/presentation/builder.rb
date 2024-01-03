@@ -69,7 +69,7 @@ module Superfluous
           end
         end
 
-        @after_build_actions.reverse_each do |action|
+        @after_build_actions.each do |action|
           action.call
         end
 
@@ -128,7 +128,7 @@ module Superfluous
           end
         end
 
-        Pathname.glob("*", base: root_dir + relative_subdir) do |child|
+        (root_dir + relative_subdir).each_child(false) do |child|
           relative_path = relative_subdir + child
           full_path = root_dir + relative_path
 

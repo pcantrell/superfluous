@@ -46,10 +46,6 @@ module Superfluous
 
           css = "\n\n/* #{ctx.item.logical_path} */\n\n" + css
 
-          # Clear output file now, but give template item a chance to populate it before
-          # attempting to append our own CSS
-          ctx.builder.output(output_path, "", existing: :overwrite)
-
           ctx.builder.after_build do
             ctx.builder.output(output_path, css, existing: :append)
           end
