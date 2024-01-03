@@ -29,7 +29,7 @@ module Superfluous
           file_count += 1
         end
 
-        if child_key == "_"  # underscore means contents apply to dir itself
+        if child_key == "_self"  # file contents apply to dir itself
           merge(data, new_data)
         else
           merge_child(data, child_key, new_data)
