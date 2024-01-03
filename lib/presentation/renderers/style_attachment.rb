@@ -83,16 +83,24 @@ module Superfluous
           yield(ctx)
         end
 
-        def render_css_template(source, ctx)
+        def render_css_template(source, preparation_context)
           # TODO: make scope available here (for helper methods)?
-          # TODO: raise helpful errors for unknown ext, warn if output is not CSS
-          TiltTemplate
-            .renderer_for(kind: :template, source:)
-            .render_to_string(
-              Renderer::RenderingContext.new(
-                props: { data: ctx.data },
-                scope: nil,
-                nested_content: nil))
+          # TODO: warn if output is not CSS
+
+          # Parse and render CSS as if it's a template, see what comes out, and hope it's CSS
+          Renderer.read_single_piece(
+            kind: :template, source:, logical_path: Pathname.new("")  # logical path unused here
+          ) do |piece:, logical_path:|
+            # This happens in the prepare phase, so there's no props and no scope available yet.
+            style_context = Renderer::RenderingContext.new(
+              props: { data: preparation_context.data }, scope: nil, nested_content: nil)
+            
+            piece.renderer.render(style_context) do |rendered_context|
+              return rendered_context.props[:content]
+            end
+          end
+
+          raise "Failed to generate style template output from #{source}"
         end
       end
 

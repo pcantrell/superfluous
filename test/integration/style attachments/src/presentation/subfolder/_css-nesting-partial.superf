@@ -11,7 +11,8 @@ end
 
 %b= message
 
-––– style.sass –––
+––– style.css –––
 
-b
+b {
   border: 1px solid green
+}

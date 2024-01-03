@@ -33,18 +33,13 @@ module Superfluous
         end
 
         def render(context)
-          yield(context.with(
-            props: context.props.merge(
-              content: render_to_string(context))))
-        end
-
-        def render_to_string(context)
-          @tilt_template.render(context.scope, context.props) do
+          content = @tilt_template.render(context.scope, context.props) do
             if context.nested_content.nil?
               raise "Template called yield, but no nested content given"
             end
             context.nested_content.call.html_safe
           end
+          yield(context.with(props: context.props.merge(content:)))
         end
       end
 
