@@ -6,12 +6,16 @@ require 'front_matter_parser'
 
 module Superfluous
   module Data
+    class Dict < OpenStruct
+      attr_accessor :id, :index
+    end
+
     # Recursively read and merge the entire contents of `dir` into a unified data tree.
     #
     def self.read(dir, logger:)
       raise "#{dir.to_s} is not a directory" unless dir.directory?
 
-      data = OpenStruct.new
+      data = Dict.new
 
       file_count = 0
       dir.each_child do |child|
@@ -61,10 +65,15 @@ module Superfluous
     def self.merge_child(data, key, new_data)
       unless existing_data = data[key]
         data[key] = new_data  # TODO: handle existing nil value? or not?
+        if new_data.is_a?(Dict)
+          new_data.id ||= key.to_sym
+        end
         return
       end
 
-      unless existing_data.is_a?(OpenStruct) && new_data.is_a?(OpenStruct)
+      return if key == :id && existing_data == new_data
+
+      unless existing_data.is_a?(Dict) && new_data.is_a?(Dict)
         raise "Cannot merge data for #{key}:" +
           "\n  value 1: #{existing_data.inspect} " +
           "\n  value 2: #{new_data.inspect}"
@@ -81,18 +90,21 @@ module Superfluous
       end
     end
 
-    # Recursively wrap hashes as OpenStructs, leaving other objects untouched.
+    # Recursively wrap hashes as Superfluous Dicts, looking inside arrays and leaving other objects
+    # untouched. Sets id and index properties as appropriate.
     #
-    def self.wrap(data)
+    def self.wrap(data, id: nil, index: nil)
       case data
         when Hash
-          result = OpenStruct.new
+          result = Dict.new
+          result.id = id.to_sym if id
+          result.index = index if index
           data.each do |key, value|
-            result[key] = wrap(value)
+            result[key] = wrap(value, id: key)
           end
           result
         when Array
-          data.map { |elem| wrap(elem) }
+          data.map.with_index { |elem, index| wrap(elem, index:) }.freeze
         else
           data.freeze if data.respond_to?(:freeze)
           data

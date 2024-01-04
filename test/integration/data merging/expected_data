@@ -1,12 +1,20 @@
 6 files
 
-(OpenStruct) {
+(Superfluous::Data::Dict) {
+  @id: (NilClass) nil
+  @index: (NilClass) nil
   haml_self_prop: (Integer) 700
   json_self_prop: (String) "foo"
   raw_file: (Pathname) "<project_dir>/data merging/data/raw_file.txt"
-  subdir: (OpenStruct) {
-    foo: (OpenStruct) {
-      bar: (OpenStruct) {
+  subdir: (Superfluous::Data::Dict) {
+    @id: (Symbol) :subdir
+    @index: (NilClass) nil
+    foo: (Superfluous::Data::Dict) {
+      @id: (Symbol) :foo
+      @index: (NilClass) nil
+      bar: (Superfluous::Data::Dict) {
+        @id: (Symbol) :bar
+        @index: (NilClass) nil
         from_nested_self: (String) "wassup"
         from_root_json: (String) "ahoy!"
         from_subdir_yaml: (String) "heya"

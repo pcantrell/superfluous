@@ -35,9 +35,11 @@ private
   def format_data(data, indent = "")
     result = "(#{data.class.name}) "
     case data
-      when OpenStruct
+      when Superfluous::Data::Dict
         result << "{\n"
-        data.each_pair.sort.each do |key, value|
+        pairs = data.each_pair +
+          %i[id index].map { |key| [:"@#{key}", data.send(key)] }
+        pairs.sort_by(&:first).each do |key, value|
           result << "#{indent}  #{key}: "
           result << format_data(value, indent + "  ")
         end
