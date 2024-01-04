@@ -8,6 +8,10 @@ module Superfluous
   module Data
     class Dict < OpenStruct
       attr_accessor :id, :index
+
+      def each(&block)
+        each_pair { |key, value| yield value }
+      end
     end
 
     # Recursively read and merge the entire contents of `dir` into a unified data tree.
