@@ -6,20 +6,60 @@ require 'front_matter_parser'
 
 module Superfluous
   module Data
-    class Dict < OpenStruct
+
+    module DataElement
       attr_accessor :id, :index
+      attr_accessor :superf_name, :superf_parent  # for internal use in error messages
+
+      def attach!(parent:, id:, index:)
+        self.superf_parent = parent
+        self.id = id&.to_sym
+        self.index = index
+      end
+
+      def superf_data_path
+        path = superf_name || ""
+        path << superf_parent.superf_data_path if superf_parent
+        path << ".#{id}" if id
+        path << "[#{index}]" if index
+        path
+      end
+    end
+
+    class Dict < OpenStruct
+      include DataElement
 
       def each(&block)
         each_pair { |key, value| yield value }
       end
+
+      def keys
+        @table.keys
+      end
+
+      def values
+        @table.values
+      end
+
+      def method_missing(method, *args, **kwargs)
+        if match = method.to_s.match(/^has_(?<key>.*)\?$/)
+          return @table.has_key?(match[:key].to_sym)
+        end
+        raise NoMethodError, "No key `#{method}` at #{superf_data_path}; available keys: #{keys}"
+      end
+    end
+
+    class Array < ::Array
+      include DataElement
     end
 
     # Recursively read and merge the entire contents of `dir` into a unified data tree.
     #
-    def self.read(dir, logger:)
+    def self.read(dir, top_level: true, logger:)
       raise "#{dir.to_s} is not a directory" unless dir.directory?
 
       data = Dict.new
+      data.superf_name = "data" if top_level
 
       file_count = 0
       dir.each_child do |child|
@@ -29,7 +69,7 @@ module Superfluous
         next if child_key =~ /^\./  # Never parse dotfiles
 
         if child.directory?
-          new_data, sub_file_count = read(child, logger:)
+          new_data, sub_file_count = read(child, top_level: false, logger:)
           file_count += sub_file_count
         else
           child_key.sub!(/\.[^\.]+$/, "")  # key = filename without extension
@@ -70,7 +110,8 @@ module Superfluous
       unless existing_data = data[key]
         data[key] = new_data  # TODO: handle existing nil value? or not?
         if new_data.is_a?(Dict)
-          new_data.id ||= key.to_sym
+          new_data.superf_parent = data
+          new_data.id = key.to_sym
         end
         return
       end
@@ -97,20 +138,26 @@ module Superfluous
     # Recursively wrap hashes as Superfluous Dicts, looking inside arrays and leaving other objects
     # untouched. Sets id and index properties as appropriate.
     #
-    def self.wrap(data, id: nil, index: nil)
+    def self.wrap(data, id: nil, index: nil, parent: nil)
       case data
         when Hash
           result = Dict.new
-          result.id = id.to_sym if id
+          result.attach!(parent:, id:, index:)
           result.index = index if index
           data.each do |key, value|
-            result[key] = wrap(value, id: key)
+            result[key] = wrap(value, id: key, parent: result)
           end
           result
-        when Array
-          data.map.with_index { |elem, index| wrap(elem, index:) }.freeze
+        when ::Array
+          result = Array.new
+          result.concat(
+            data.map.with_index do |elem, index|
+              wrap(elem, index:, parent: result)
+            end
+          )
+          result.attach!(parent:, id:, index:)
+          result
         else
-          data.freeze if data.respond_to?(:freeze)
           data
       end
     end

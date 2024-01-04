@@ -7,12 +7,12 @@
   json: (Superfluous::Data::Dict) {
     @id: (Symbol) :json
     @index: (NilClass) nil
-    foo: (Array) [
+    foo: (Superfluous::Data::Array) [
       (String) "bar"
       (Integer) 17
     ]
   }
-  json_array: (Array) [
+  json_array: (Superfluous::Data::Array) [
     (Integer) 37
     (String) "ahoy"
     (Superfluous::Data::Dict) {
@@ -44,7 +44,7 @@
     }
   }
   plaintext: (Pathname) "<project_dir>/data parsing/data/plaintext.txt"
-  yaml: (Array) [
+  yaml: (Superfluous::Data::Array) [
     (Superfluous::Data::Dict) {
       @id: (NilClass) nil
       @index: (Integer) 0
