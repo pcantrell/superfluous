@@ -7,7 +7,15 @@ module Superfluous
       args = args.dup  # Save ARGV for self-relaunch
       live = !!args.delete("--live")
       verbose = !!args.delete("--verbose")
+
+      usage_and_exit! if args.length != 1
+
       Superfluous::CLI.new(project_dir: args[0], live:, verbose:)
+    end
+
+    def self.usage_and_exit!
+      STDERR.puts "usage: superfluous <project-dir> [--live] [--verbose]"
+      exit 1
     end
 
     def initialize(project_dir:, live:, verbose:)
@@ -27,29 +35,34 @@ module Superfluous
       require 'listen'
 
       # Changes to src/ cause rebuild
-      listen_to_project_dir(@project.data_dir)
-      listen_to_project_dir(@project.presentation_dir, use_existing_data: true)
+      rebuild_on_change(@project.data_dir)
+      rebuild_on_change(@project.presentation_dir, use_existing_data: true)
 
-      # Changes to Superfluous itself cause relaunch + rebuild (for development)
-      Listen.to(Pathname.new(__dir__).parent) do
-        puts
-        puts "Superfluous modified; relaunching..."
-        puts
-        exec((Pathname.new(__dir__) + "../bin/superfluous").realpath.to_s, *ARGV)
-      end.start
+      # Changes to bundle or to Superfluous itself cause relaunch + rebuild (for development)
+      relaunch_on_change("Superfluous gem", Pathname.new(__dir__).parent)
+      relaunch_on_change("Gemfile", Pathname.new(ENV['BUNDLE_GEMFILE']).parent, only: /^Gemfile.*/)
 
       # Start a local web server
       override_web_server_logging!
-      server = Adsf::Server.new(live: true, root: @project.output_dir)
+      server = Adsf::Server.new(live: true, root: @project.output_dir, auto_extensions: ".html")
       %w[INT TERM].each do |s|
         Signal.trap(s) { server.stop }
       end
       server.run
     end
 
-    def listen_to_project_dir(dir, **opts)
+    def rebuild_on_change(dir, **opts)
       Listen.to(dir, latency: 0.05, wait_for_delay: 0.2) do
         build_guarded(**opts)
+      end.start
+    end
+
+    def relaunch_on_change(description, dir, **listen_opts)
+      Listen.to(dir, **listen_opts) do
+        puts
+        puts "#{description} modified; relaunching..."
+        puts
+        exec((Pathname.new(__dir__) + "../bin/superfluous").realpath.to_s, *ARGV)
       end.start
     end
 

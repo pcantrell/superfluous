@@ -1,3 +1,16 @@
+PATH
+  remote: .
+  specs:
+    superfluous (0.1)
+      activesupport (~> 7.1)
+      adsf (~> 1.4)
+      adsf-live (~> 1.4)
+      ansi (~> 1.5)
+      awesome_print (~> 1.9)
+      front_matter_parser (~> 1.0)
+      kramdown (~> 2.4)
+      tilt (~> 2.3)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -23,7 +36,7 @@ GEM
     ansi (1.5.0)
     awesome_print (1.9.2)
     base64 (0.2.0)
-    bigdecimal (3.1.4)
+    bigdecimal (3.1.5)
     builder (3.2.4)
     coderay (1.1.3)
     concurrent-ruby (1.2.2)
@@ -51,11 +64,10 @@ GEM
     guard-minitest (2.4.6)
       guard-compat (~> 1.2)
       minitest (>= 3.0)
-    haml (6.2.3)
+    haml (6.3.0)
       temple (>= 0.8.2)
       thor
       tilt
-    htmlbeautifier (1.4.2)
     http_parser.rb (0.8.0)
     i18n (1.14.1)
       concurrent-ruby (~> 1.0)
@@ -109,23 +121,16 @@ PLATFORMS
   arm64-darwin-23
 
 DEPENDENCIES
-  activesupport (~> 7.1)
-  adsf (~> 1.4)
-  adsf-live (~> 1.4)
-  ansi (~> 1.5)
-  awesome_print (~> 1.9)
   diffy (~> 3.4)
-  front_matter_parser (~> 1.0)
   guard (~> 2.18)
   guard-minitest (~> 2.4)
   haml (~> 6.2)
-  htmlbeautifier (~> 1.4)
-  kramdown (~> 2.4)
   minitest-focus (~> 1.4)
   minitest-reporters (~> 1.6)
   pry (~> 0.14.2)
   rake (~> 13.1)
   sassc (~> 2.4)
+  superfluous!
 
 BUNDLED WITH
    2.4.22

@@ -9,4 +9,20 @@ Gem::Specification.new do |s|
   s.homepage    = 'https://github.com/pcantrell/superfluous'
   s.metadata    = { "source_code_uri" => "https://github.com/pcantrell/superfluous" }
   s.license     = 'MIT'
+
+  # Data parsing
+  s.add_runtime_dependency "kramdown", "~> 2.4"
+  s.add_runtime_dependency "front_matter_parser", "~> 1.0"
+
+  # Templating
+  s.add_runtime_dependency "tilt", "~> 2.3"
+
+  # Util
+  s.add_runtime_dependency "activesupport", "~> 7.1"
+  s.add_runtime_dependency "awesome_print", "~> 1.9"
+  s.add_runtime_dependency "ansi", "~> 1.5"
+
+  # Server
+  s.add_runtime_dependency "adsf", "~> 1.4"
+  s.add_runtime_dependency "adsf-live", "~> 1.4"
 end

@@ -1,6 +1,33 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+# Use project Gemfile if present, otherwise use Superfluous gem’s Gemfile
+project_dir = ARGV.reject { |arg| arg =~ /^--/ }.first  # (Horrible arg parsing hack, do not look)
+if project_dir
+  project_gemfile = File.join(project_dir, "Gemfile")
+  if File.exist?(project_gemfile)
+    ENV['BUNDLE_GEMFILE'] ||= project_gemfile
+  end
+end
+ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../Gemfile', __dir__)
+puts "Using gemfile at #{ENV['BUNDLE_GEMFILE']}"
+require 'bundler/setup'
+
+unless Gem.loaded_specs.keys.include?("superfluous")
+  require 'pathname'
+  gemfile_dir = Pathname.new(ENV['BUNDLE_GEMFILE']).parent.realpath
+  gemfile_dir = nil if gemfile_dir == Pathname.new(".").realpath
+  STDERR.puts <<~EOS
+
+    ERROR: Project Gemfile does not specify `superfluous` as a dependency
+    To fix, add superfluous to your bundle:
+    
+      #{"cd #{gemfile_dir} && " if gemfile_dir}bundle add superfluous
+
+  EOS
+  exit 1
+end
+
 require_relative '../lib/cli'
 
 Superfluous::CLI.run(ARGV)
