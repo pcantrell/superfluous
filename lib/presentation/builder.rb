@@ -19,7 +19,7 @@ module Superfluous
         @concise_ids = {}
 
         @items_by_logical_path = {}  # logical path → Item
-        read_items(presentation_dir)
+        read_items(root_dir: presentation_dir, scope_parent_class: Renderer::RenderingScope)
       end
 
       # Renders a new version of the output to a tmp dir, then quickly swaps out the out entire
@@ -40,8 +40,10 @@ module Superfluous
         return self
       end
 
-      # Traverses and processes the presentation/ directory, replacing existing files in the output
-      # dir but leaving any extraneous / straggler files untouched.
+    private
+
+      # Traverses and processes the presentation/ directory, raising an error if files exist in the
+      # output dir and leaving any extraneous / straggler files untouched.
       #
       def build(data:, output_dir:)
         raise "Attempted to build twice with same Builder" if @used
@@ -76,11 +78,13 @@ module Superfluous
         return self
       end
 
+    public  # Methods available for renderers
+
       def after_build(&action)
         @after_build_actions << action
       end
 
-      def output(relative_path, content, existing: :overwrite)
+      def output(relative_path, content, existing: :error)
         output_file = (@output_dir + relative_path).cleanpath
         unless @output_dir.contains?(output_file)
           raise "Item produced a dynamic output path that lands outsite the output folder" +
@@ -116,11 +120,7 @@ module Superfluous
 
       DIR_SCRIPT_FILENAME = "_script.rb"
 
-      def read_items(
-        root_dir,
-        relative_subdir = Pathname(""),
-        scope_parent_class = Renderer::RenderingScope
-      )
+      def read_items(root_dir:, relative_subdir: Pathname(""), scope_parent_class:)
         dir_script_file = root_dir + relative_subdir + DIR_SCRIPT_FILENAME
         if dir_script_file.exist?
           scope_parent_class = Class.new(scope_parent_class) do |new_scope|
@@ -129,15 +129,14 @@ module Superfluous
         end
 
         (root_dir + relative_subdir).each_child(false) do |child|
-          relative_path = relative_subdir + child
-          full_path = root_dir + relative_path
+          # Ignore dir script; we read it above
+          next if child.to_s == DIR_SCRIPT_FILENAME
 
-          if full_path.directory?
-            read_items(root_dir, relative_path, scope_parent_class)
-          elsif child.to_s == DIR_SCRIPT_FILENAME
-            # Ignore script; we read it above
+          child_path = relative_subdir + child
+          if (root_dir + child_path).directory?
+            read_items(root_dir:, relative_subdir: child_path, scope_parent_class:)
           else
-            source = Source.new(root_dir:, relative_path:)
+            source = Source.new(root_dir:, relative_path: child_path)
             Renderer.each_piece(source) do |logical_path:, piece:|
               item = @items_by_logical_path[logical_path] ||=
                 Item.new(logical_path, Class.new(scope_parent_class))
@@ -152,15 +151,14 @@ module Superfluous
           item.ensure_prepared!(
             Renderer::PreparationContext.new(item:, data:, builder: self))
 
-          final_step_with_count = lambda do |*args|
-            count_output.call
-            final_step.call(*args)
-          end
-
           partial_renderer = lambda do |partial, **props, &block|
             render_partial(partial, from_item: item, data:, **props, &block)
           end
 
+          final_step_with_count = lambda do |*args|
+            count_output.call
+            final_step.call(*args)
+          end
           pipeline = item.pieces.reverse.reduce(final_step_with_count) do |next_step, piece|
             lambda do |context|  # context here will come from previous steps
               renderer = lambda do |**props_from_script|
@@ -209,7 +207,7 @@ module Superfluous
         output_count = 0
 
         yield(
-          log_output_file: Proc.new do |output_file_relative|
+          log_output_file: lambda do |output_file_relative|
             if output_count == 0 || @logger.verbose
               if subsequent_line_prefix
                 @logger.log subsequent_line_prefix, newline: false
