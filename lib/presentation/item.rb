@@ -81,7 +81,7 @@ module Superfluous
         logical_path.parent + logical_path.basename.to_s.gsub(PROP_PATTERN) do
           key = $1.to_sym
           unless props.has_key?(key)
-            raise "Prop [#{$1}] appears in item path #{self}, but no value given for #{$1};" +
+            raise "Property {#{$1}} appears in item path #{self}, but no value given for #{$1};" +
               " available props are: #{props.keys.join(', ')}"
           end
           props[key]
@@ -107,7 +107,7 @@ module Superfluous
     private
 
       PARTIAL_PATTERN = /^_/
-      PROP_PATTERN = /\[(.*)\]/
+      PROP_PATTERN = /\{(.*)\}/
     end
 
     Piece = ::Data.define(:kind, :source, :renderer)

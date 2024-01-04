@@ -196,7 +196,7 @@ class ErrorTest < SuperfluousTest
     # The helps test that props from one render don't propagate to the next
     build_and_check_error(
       files: {
-        "presentation/no-content-[n].superf" => <<~EOF
+        "presentation/no-content-{n}.superf" => <<~EOF
           ––– script.rb –––
           def build
             render(n: 1, content: "")
@@ -204,15 +204,15 @@ class ErrorTest < SuperfluousTest
           end
         EOF
       },
-      expected_message: "Pipeline did not produce a `content` prop for ❰no-content-[n]❱",
-      expected_in_backtrace: ["《src_dir》/presentation/no-content-[n].superf:4:"]
+      expected_message: "Pipeline did not produce a `content` prop for ❰no-content-{n}❱",
+      expected_in_backtrace: ["《src_dir》/presentation/no-content-{n}.superf:4:"]
     )
   end
 
   def test_dynamic_path_escapes_output_folder
     build_and_check_error(
       files: {
-        "presentation/[path].superf" => <<~EOF
+        "presentation/{path}.superf" => <<~EOF
           ––– script.rb –––
           def build
             render(path: "./foo", content: "")  # OK
@@ -221,7 +221,7 @@ class ErrorTest < SuperfluousTest
         EOF
       },
       expected_message: "Item produced a dynamic output path that lands outsite the output folder",
-      expected_in_backtrace: ["《src_dir》/presentation/[path].superf:4:"]
+      expected_in_backtrace: ["《src_dir》/presentation/{path}.superf:4:"]
     )
   end
 
@@ -238,10 +238,10 @@ class ErrorTest < SuperfluousTest
   def test_partial_with_props
     build_and_check_error(
       files: {
-        "presentation/main.haml" => "= partial 'helper[oops]'",
-        "presentation/_helper[oops].haml" => "%b oops"
+        "presentation/main.haml" => "= partial 'helper{oops}'",
+        "presentation/_helper{oops}.haml" => "%b oops"
       },
-      expected_message: "Partial ❰_helper[oops]❱ cannot have [square braces] in its filename",
+      expected_message: "Partial ❰_helper{oops}❱ cannot have {curly braces} in its filename",
       expected_in_backtrace: ["《src_dir》/presentation/main.haml:1:"]
     )
   end
@@ -272,14 +272,14 @@ class ErrorTest < SuperfluousTest
   def test_missing_filename_prop
     build_and_check_error(
       files: {
-        "presentation/foo[bar].superf" => <<~EOS
+        "presentation/foo{bar}.superf" => <<~EOS
           ––– script.rb –––
           def build
             render(baz: 3, blarg: 17)
           end
         EOS
       },
-      expected_message: "Prop [bar] appears in item path ❰foo[bar]❱, but no value given for bar; available props are: data, baz, blarg"
+      expected_message: "Property {bar} appears in item path ❰foo{bar}❱, but no value given for bar; available props are: data, baz, blarg"
     )
   end
 

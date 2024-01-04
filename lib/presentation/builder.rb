@@ -233,7 +233,7 @@ module Superfluous
         from_item.partial_search_paths.each do |search_path|
           if partial_item = @items_by_logical_path[search_path + "_#{partial}"]
             unless partial_item.singleton?
-              raise "Partial #{partial_item} cannot have [square braces] in its filename"
+              raise "Partial #{partial_item} cannot have {curly braces} in its filename"
             end
 
             result = nil
