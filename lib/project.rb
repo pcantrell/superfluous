@@ -65,7 +65,7 @@ module Superfluous
         @logger.log
         @logger.log "──────────────────────── Data ────────────────────────"
         @logger.log_indented do
-          @logger.log data.ai(indent: -2, ruby19_syntax: true)
+          @logger.log @data.ai(indent: -2, ruby19_syntax: true)
         end
         @logger.log "──────────────────────────────────────────────────────"
         @logger.log

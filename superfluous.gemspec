@@ -23,6 +23,6 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "ansi", "~> 1.5"
 
   # Server
-  s.add_runtime_dependency "adsf", "~> 1.4"
-  s.add_runtime_dependency "adsf-live", "~> 1.4"
+  s.add_runtime_dependency "adsf", "~> 1.5"
+  s.add_runtime_dependency "adsf-live", "~> 1.5"
 end

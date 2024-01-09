@@ -44,7 +44,7 @@ module Superfluous
 
       # Start a local web server
       override_web_server_logging!
-      server = Adsf::Server.new(live: true, root: @project.output_dir, auto_extensions: ".html")
+      server = Adsf::Server.new(live: true, root: @project.output_dir, auto_extensions: "html")
       %w[INT TERM].each do |s|
         Signal.trap(s) { server.stop }
       end
