@@ -26,8 +26,16 @@ module Superfluous
       end
     end
 
-    class Dict < OpenStruct
+    class Dict
       include DataElement
+
+      def initialize
+        @table = {}
+      end
+
+      def each_pair(&block)
+        @table.each_pair(&block)
+      end
 
       def each(&block)
         each_pair { |key, value| yield value }
@@ -37,15 +45,49 @@ module Superfluous
         @table.keys
       end
 
+      def has_key?(key)
+        return @table.has_key?(key.to_sym)
+      end
+
       def values
         @table.values
       end
 
-      def method_missing(method, *args, **kwargs)
-        if match = method.to_s.match(/^has_(?<key>.*)\?$/)
-          return @table.has_key?(match[:key].to_sym)
+      def [](*keys)
+        return @table[keys[0].to_sym] if keys.size == 1
+
+        val = self
+        keys.each do |key|
+          val = val[key]
+          return nil if val.nil?
         end
-        raise NoMethodError, "No key `#{method}` at #{superf_data_path}; available keys: #{keys}"
+        return val
+      end
+
+      def to_h
+        @table
+      end
+
+      def []=(key, value)
+        @table[key.to_sym] = value
+      end
+
+      def method_missing(method, *args, **kwargs)
+        if match = method.to_s.match(/^(?<key>.*)\=$/)
+          return @table[match[:key].to_sym] = args[0]
+        elsif match = method.to_s.match(/^(?<key>.*)\?$/)
+          unless args.empty? && kwargs.empty?
+            raise "Expected 0 args, got #{args.size} args + #{kwargs.size} keywords"
+          end
+          return @table[match[:key].to_sym]
+        elsif @table.has_key?(method)
+          unless args.empty? && kwargs.empty?
+            raise "Expected 0 args, got #{args.size} args + #{kwargs.size} keywords"
+          end
+          @table[method]
+        else
+          raise NoMethodError, "No key `#{method}` at #{superf_data_path}; available keys: #{keys}"
+        end
       end
     end
 
