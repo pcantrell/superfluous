@@ -1,9 +1,34 @@
-10 files
+15 files
 
 (Superfluous::Data::Dict) {
   @id: (NilClass) nil
   @index: (NilClass) nil
-  image: (Pathname) "<project_dir>/data parsing/data/image.png"
+  dots: (Superfluous::Data::Dict) {
+    @id: (Symbol) :dots
+    @index: (NilClass) nil
+    become: (Superfluous::Data::Dict) {
+      @id: (Symbol) :become
+      @index: (NilClass) nil
+      tree: (Superfluous::Data::Dict) {
+        @id: (Symbol) :tree
+        @index: (NilClass) nil
+        traversals: (Superfluous::Data::Dict) {
+          @id: (Symbol) :traversals
+          @index: (NilClass) nil
+          c: (String) "seagull"
+          w: (String) "uu"
+          x: (String) "extra"
+          y: (String) "why not?"
+          z: (String) "xylophone"
+        }
+      }
+    }
+  }
+  image: (Superfluous::Data::Dict) {
+    @id: (Symbol) :image
+    @index: (NilClass) nil
+    png: (Pathname) "<project_dir>/data parsing/data/image.png"
+  }
   json: (Superfluous::Data::Dict) {
     @id: (Symbol) :json
     @index: (NilClass) nil
@@ -35,7 +60,11 @@
     title: (String) "Very Exciting Story"
     weather: (String) "stormy"
   }
-  plaintext: (Pathname) "<project_dir>/data parsing/data/plaintext.txt"
+  plaintext: (Superfluous::Data::Dict) {
+    @id: (Symbol) :plaintext
+    @index: (NilClass) nil
+    txt: (Pathname) "<project_dir>/data parsing/data/plaintext.txt"
+  }
   yaml: (Superfluous::Data::Array) [
     (Superfluous::Data::Dict) {
       @id: (NilClass) nil

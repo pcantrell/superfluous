@@ -5,7 +5,11 @@
   @index: (NilClass) nil
   haml_self_prop: (Integer) 700
   json_self_prop: (String) "foo"
-  raw_file: (Pathname) "<project_dir>/data merging/data/raw_file.txt"
+  raw_file: (Superfluous::Data::Dict) {
+    @id: (Symbol) :raw_file
+    @index: (NilClass) nil
+    txt: (Pathname) "<project_dir>/data merging/data/raw_file.txt"
+  }
   subdir: (Superfluous::Data::Dict) {
     @id: (Symbol) :subdir
     @index: (NilClass) nil

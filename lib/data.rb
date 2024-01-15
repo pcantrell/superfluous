@@ -107,23 +107,30 @@ module Superfluous
       dir.each_child do |child|
         logger.log child, temporary: !logger.verbose
 
-        child_key = child.basename.to_s
-        next if child_key =~ /^\./  # Never parse dotfiles
+        child_keys = child.basename.to_s.split('.')
+        next if child_keys.first.empty?  # Filename started with `.`; never parse dotfiles
 
         if child.directory?
           new_data, sub_file_count = read(child, top_level: false, logger:)
           file_count += sub_file_count
         else
-          child_key.sub!(/\.[^\.]+$/, "")  # key = filename without extension
-          new_data = wrap(parse_file(child))
+          new_data, ext_action = parse_file(child)
+          child_keys.pop if ext_action == :strip_extension
           file_count += 1
         end
 
-        if child_key == "_self"  # file contents apply to dir itself
-          merge(data, new_data)
-        else
-          merge_child(data, child_key, new_data)
-        end
+        # Turn dot chain in filename into tree traversal
+        new_data = wrap(
+          child_keys.reverse.reduce(new_data) do |data, key|
+            if key == "_self"
+              data
+            else
+              { key.to_sym => data }
+            end
+          end
+        )
+
+        merge(data, new_data)
       end
 
       [data, file_count]
@@ -132,15 +139,16 @@ module Superfluous
     def self.parse_file(file)
       case file.extname
         when ".json"
-          JSON.parse(file.read)
+          [JSON.parse(file.read), :strip_extension]
         when ".yaml"
-          YAML.load(file.read)
+          [YAML.load(file.read), :strip_extension]
         when ".md"
           parts = FrontMatterParser::Parser.parse_file(file)
-          parts.front_matter.merge(
+          data = parts.front_matter.merge(
             content: Kramdown::Document.new(parts.content).to_html)
+          [data, :strip_extension]
         else
-          file
+          [file, :keep_extension]
       end
     end
 
