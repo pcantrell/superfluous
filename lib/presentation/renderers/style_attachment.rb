@@ -59,6 +59,7 @@ module Superfluous
 
         def render(ctx)
           if @content_wrapper
+            # TODO: helpful error or graceful handling if nothing is upstream
             content = ctx.props[:content]
 
             if match = content.match(FULL_HTML_DOC)
