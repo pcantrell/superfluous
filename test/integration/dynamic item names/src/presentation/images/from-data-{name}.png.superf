@@ -1,6 +1,6 @@
 –––––––––––– script.rb ––––––––––––
 
 def build(data:)
-  render(name: 'foo', content: data["image-data"].read)
-  render(name: 'bar', content: data["image-data"].read)
+  render(name: 'foo', content: data["image-data"])  # By passing through pathname
+  render(name: 'bar', content: data["image-data"].binread)  # By reading content
 end

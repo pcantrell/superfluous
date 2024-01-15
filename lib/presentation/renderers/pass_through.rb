@@ -15,7 +15,7 @@ module Superfluous
         end
 
         def initialize(source)
-          @content = source.content
+          @content = source.content_or_path
         end
 
         def render(context)

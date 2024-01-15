@@ -1,0 +1,18 @@
+––– script.rb –––
+
+def self.style_config
+  {
+    output: "/appended.css",
+    isolation: :none
+  }
+end
+
+––– template.txt –––
+
+Hi.
+
+––– style.css –––
+
+.bar {
+  content: 'appended from style attachment';
+}

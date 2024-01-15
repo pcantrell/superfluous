@@ -1,0 +1,11 @@
+.foo {
+  content: 'from static asset, initially symlinked, then copied on append';
+}
+
+
+/* append_to_static */
+
+
+.bar {
+  content: 'appended from style attachment';
+}

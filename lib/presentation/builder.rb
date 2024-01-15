@@ -85,6 +85,10 @@ module Superfluous
       end
 
       def output(relative_path, content, existing: :error)
+        unless %i[append error].include?(existing)
+          raise "Illegal value for `existing` param: #{existing.inspect}"
+        end
+
         output_file = (@output_dir + relative_path).cleanpath
         unless @output_dir.contains?(output_file)
           raise "Item produced a dynamic output path that lands outsite the output folder" +
@@ -92,20 +96,29 @@ module Superfluous
             "\n           resolved to: #{output_file}" +
             "\n   which is outside of: #{@output_dir}"
         end
+        output_file.parent.mkpath
 
         if existing == :error && output_file.exist?
           raise "#{output_file} already exists"
         end
 
-        write_mode =
-          case existing
-            when :overwrite, :error then "w"
-            when :append then "a"
-            else raise "Illegal value for `existing` param: #{existing.inspect}"
+        if content.is_a?(Pathname)
+          if existing == :append
+            content = content.read
+          else
+            File.symlink(content, output_file)  # TODO: allow config to disable this
+            return
           end
+        end
 
-        output_file.parent.mkpath
-        File.write(output_file, content, mode: write_mode)
+        if output_file.symlink? && existing == :append
+          tmpfile = Tempfile.create(output_file.to_s)
+          FileUtils.cp(output_file, tmpfile)
+          FileUtils.rm(output_file)
+          FileUtils.mv(tmpfile, output_file)
+        end
+
+        File.write(output_file, content, mode: "a")
       end
 
       def concise_id(*key)
@@ -136,7 +149,7 @@ module Superfluous
           if (root_dir + child_path).directory?
             read_items(root_dir:, relative_subdir: child_path, scope_parent_class:)
           else
-            source = Source.new(root_dir:, relative_path: child_path)
+            source = Source.new(root_dir:, relative_path: child_path, whole_file: true)
             Renderer.each_piece(source) do |logical_path:, piece:|
               item = @items_by_logical_path[logical_path] ||=
                 Item.new(logical_path, Class.new(scope_parent_class))

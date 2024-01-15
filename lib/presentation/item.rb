@@ -4,10 +4,11 @@ module Superfluous
     # A source of presentation content, either a whole file or a part of one
     #
     class Source
-      def initialize(root_dir:, relative_path:, ext: nil, line_num: 1, content: nil)
+      def initialize(root_dir:, relative_path:, ext: nil, line_num: 1, whole_file:, content: nil)
         @root_dir = root_dir
         @relative_path = relative_path
         @line_num = line_num
+        @whole_file = whole_file
         @content = content
         @ext = ext || relative_path.extname
         @full_path = (root_dir + relative_path).realpath
@@ -19,9 +20,17 @@ module Superfluous
         @content || full_path.read
       end
 
+      def content_or_path
+        if @whole_file
+          full_path
+        else
+          content
+        end
+      end
+
       def subsection(ext:, line_num: nil, content: nil)
         line_num ||= self.line_num
-        self.class.new(root_dir:, relative_path:, ext:, line_num:, content:)
+        self.class.new(root_dir:, relative_path:, ext:, line_num:, content:, whole_file: false)
       end
 
       def to_s
