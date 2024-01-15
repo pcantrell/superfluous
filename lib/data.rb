@@ -64,12 +64,20 @@ module Superfluous
         return val
       end
 
+      def []=(key, value)
+        @table[key.to_sym] = value
+      end
+
       def to_h
         @table
       end
 
-      def []=(key, value)
-        @table[key.to_sym] = value
+      def to_s(value_method: :to_s)
+        "{ " + @table.map { |k,v| "#{k}: #{v.send(value_method)}" }.join(", ") + " }"
+      end
+
+      def inspect
+        "Dict@" + superf_data_path + to_s(value_method: :inspect)
       end
 
       def method_missing(method, *args, **kwargs)
@@ -77,12 +85,12 @@ module Superfluous
           return @table[match[:key].to_sym] = args[0]
         elsif match = method.to_s.match(/^(?<key>.*)\?$/)
           unless args.empty? && kwargs.empty?
-            raise "Expected 0 args, got #{args.size} args + #{kwargs.size} keywords"
+            raise "#{method}: Expected 0 args, got #{args.size} args + #{kwargs.size} keywords"
           end
           return @table[match[:key].to_sym]
         elsif @table.has_key?(method)
           unless args.empty? && kwargs.empty?
-            raise "Expected 0 args, got #{args.size} args + #{kwargs.size} keywords"
+            raise "#{method}: Expected 0 args, got #{args.size} args + #{kwargs.size} keywords"
           end
           @table[method]
         else
