@@ -130,7 +130,7 @@ module Superfluous
         # Turn dot chain in filename into tree traversal
         new_data = wrap(
           child_keys.reverse.reduce(new_data) do |data, key|
-            if key == "_self"
+            if key == "_"
               data
             else
               { key.to_sym => data }
