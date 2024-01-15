@@ -137,10 +137,8 @@ module Superfluous
           YAML.load(file.read)
         when ".md"
           parts = FrontMatterParser::Parser.parse_file(file)
-          {
-            meta: parts.front_matter,
-            content: Kramdown::Document.new(parts.content).to_html
-          }
+          parts.front_matter.merge(
+            content: Kramdown::Document.new(parts.content).to_html)
         else
           file
       end
