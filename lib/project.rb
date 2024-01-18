@@ -11,6 +11,19 @@ module Superfluous
     result
   end
 
+  DIR_SCRIPT_FILENAME = "_script.rb"
+
+  def self.read_dir_script(dir, parent_class: Object)  # both data and presentation share this
+    dir_script_file = dir + DIR_SCRIPT_FILENAME
+    if dir_script_file.exist?
+      return Class.new(parent_class) do |new_scope|
+        new_scope.class_eval(dir_script_file.read, dir_script_file.to_s)
+      end
+    else
+      return parent_class
+    end
+  end
+
   class Project
     attr_reader :project_dir, :src_dir, :output_dir
 

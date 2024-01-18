@@ -131,15 +131,9 @@ module Superfluous
 
     private
 
-      DIR_SCRIPT_FILENAME = "_script.rb"
-
       def read_items(root_dir:, relative_subdir: Pathname(""), scope_parent_class:)
-        dir_script_file = root_dir + relative_subdir + DIR_SCRIPT_FILENAME
-        if dir_script_file.exist?
-          scope_parent_class = Class.new(scope_parent_class) do |new_scope|
-            new_scope.class_eval(dir_script_file.read, dir_script_file.to_s)
-          end
-        end
+        scope_parent_class = Superfluous::read_dir_script(
+          root_dir + relative_subdir, parent_class: scope_parent_class)
 
         (root_dir + relative_subdir).each_child(false) do |child|
           # Ignore dir script; we read it above

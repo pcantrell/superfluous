@@ -20,8 +20,9 @@ module Superfluous
       dir.each_child do |child|
         logger.log child, temporary: !logger.verbose
 
+        next if child.basename.to_s.start_with?(/\.|_[^\.]/)  # skip dotfiles, _foo
+
         child_keys = child.basename.to_s.split('.')
-        next if child_keys.first.empty?  # Filename started with `.`; never parse dotfiles
 
         if child.directory?
           new_data, sub_file_count = read(child, top_level: false, logger:)
@@ -45,6 +46,8 @@ module Superfluous
 
         merge(data, new_data)
       end
+
+      data = apply_script_transform(dir, data)
 
       [data, file_count]
     end
@@ -118,6 +121,17 @@ module Superfluous
           result
         else
           data
+      end
+    end
+
+    def self.apply_script_transform(dir, data)
+      Superfluous::read_dir_script(dir, parent_class: DataScriptBase).new
+        .transform(data)  # TODO: But might scripts want to inherit from parents? That breaks this!
+    end
+
+    class DataScriptBase
+      def transform(data)
+        data
       end
     end
   end
