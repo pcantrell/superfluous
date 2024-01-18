@@ -1,4 +1,4 @@
-require_relative 'data'
+require_relative 'data/builder'
 require_relative 'presentation/builder'
 require_relative 'logging'
 require 'awesome_print'
