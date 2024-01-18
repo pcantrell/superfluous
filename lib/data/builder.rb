@@ -70,9 +70,8 @@ module Superfluous
     def self.merge_child(data, key, new_data)
       unless existing_data = data[key]
         data[key] = new_data  # TODO: handle existing nil value? or not?
-        if new_data.is_a?(Dict)
-          new_data.superf_parent = data
-          new_data.id = key.to_sym
+        if new_data.is_a?(TreeNode)
+          new_data.attach!(parent: data, id: key, index: nil)
         end
         return
       end
@@ -97,14 +96,13 @@ module Superfluous
     end
 
     # Recursively wrap eligible types (hashes and arrays) as Superfluous TreeNodes, leaving other
-    # objects untouched. Sets id, index, and superf_parent properties as appropriate.
+    # objects untouched. Sets id, index, and parent properties as appropriate.
     #
     def self.wrap(data, id: nil, index: nil, parent: nil)
       case data
         when Hash
           result = Dict.new
           result.attach!(parent:, id:, index:)
-          result.index = index if index
           data.each do |key, value|
             result[key] = wrap(value, id: key, parent: result)
           end

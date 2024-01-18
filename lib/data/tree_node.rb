@@ -2,20 +2,26 @@ module Superfluous
   module Data
 
     module TreeNode
-      attr_accessor :id, :index
-      attr_accessor :superf_name, :superf_parent  # for internal use in error messages
+      attr_reader :id, :index, :parent
+      %w[id index parent].each do |attr|
+        define_method("#{attr}=") do |*args|
+          raise "#{self.class}##{attr} is read-only; use `attach!` to reparent a node"
+        end
+      end
+
+      attr_accessor :superf_name  # for internal use in error messages
 
       def attach!(parent:, id:, index:)
-        self.superf_parent = parent
-        self.id = id&.to_sym
-        self.index = index
+        @parent = parent
+        @id = id&.to_sym
+        @index = index
       end
 
       def superf_data_path
         path = superf_name || ""
-        path << superf_parent.superf_data_path if superf_parent
-        path << ".#{id}" if id
-        path << "[#{index}]" if index
+        path << @parent.superf_data_path if @parent
+        path << ".#{@id}" if @id
+        path << "[#{@index}]" if @index
         path
       end
     end
@@ -92,7 +98,8 @@ module Superfluous
           end
           @table[method]
         else
-          raise NoMethodError, "No key `#{method}` at #{superf_data_path}; available keys: #{keys}"
+          raise NoMethodError, "No Dict key `#{method}` for #{superf_data_path};"+
+            " available keys are: #{keys}"
         end
       end
     end
