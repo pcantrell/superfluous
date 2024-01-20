@@ -77,7 +77,16 @@ module Superfluous
       end
 
       def to_s(value_method: :to_s)
+        Fiber[:superf_to_s_depth] ||= 0
+        Fiber[:superf_to_s_depth] += 1
+ 
+        if Fiber[:superf_to_s_depth] > 4
+          return "<<#{superf_data_path}>>"
+        end
+
         "{ " + @table.map { |k,v| "#{k}: #{v.send(value_method)}" }.join(", ") + " }"
+      ensure
+        Fiber[:superf_to_s_depth] -= 1
       end
 
       def inspect
