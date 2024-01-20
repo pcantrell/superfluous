@@ -3,7 +3,6 @@ require 'ostruct'
 require 'json'
 require 'yaml'
 require 'kramdown'
-require 'front_matter_parser'
 
 module Superfluous
   module Data
@@ -59,9 +58,20 @@ module Superfluous
         when ".yaml"
           [YAML.load(file.read), :strip_extension]
         when ".md"
-          parts = FrontMatterParser::Parser.parse_file(file)
-          data = parts.front_matter.merge(
-            content: Kramdown::Document.new(parts.content).to_html)
+           match = file.read.match %r{
+            \A\s*
+            (
+              ^[-–]{3,}\s*
+              (?<yaml> .*?)
+              ^[-–]{3,}\s*
+            )?
+            (?<markdown> .*)\Z
+          }mx
+          raise "Unable to extract markdown" unless match
+
+          data = YAML.load(match[:yaml] || '{}').merge(
+            content: Kramdown::Document.new(match[:markdown]).to_html)
+
           [data, :strip_extension]
         else
           [file, :keep_extension]

@@ -12,7 +12,6 @@ Gem::Specification.new do |s|
 
   # Data parsing
   s.add_runtime_dependency "kramdown", "~> 2.4"
-  s.add_runtime_dependency "front_matter_parser", "~> 1.0"
 
   # Templating
   s.add_runtime_dependency "tilt", "~> 2.3"

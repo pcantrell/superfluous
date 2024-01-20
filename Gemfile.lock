@@ -7,7 +7,6 @@ PATH
       adsf-live (~> 1.5)
       ansi (~> 1.5)
       awesome_print (~> 1.9)
-      front_matter_parser (~> 1.0)
       kramdown (~> 2.4)
       tilt (~> 2.3)
 
@@ -50,7 +49,6 @@ GEM
     eventmachine (1.2.7)
     ffi (1.16.3)
     formatador (1.1.0)
-    front_matter_parser (1.0.1)
     guard (2.18.1)
       formatador (>= 0.2.4)
       listen (>= 2.7, < 4.0)
