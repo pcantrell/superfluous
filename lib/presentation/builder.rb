@@ -237,8 +237,9 @@ module Superfluous
       end
 
       def render_partial(partial, from_item:, data:, **props, &nested_content)
+        partial_path = partial.to_s.sub(%r{(.*/)?(.*?)}, "\\1_\\2")
         from_item.partial_search_paths.each do |search_path|
-          if partial_item = @items_by_logical_path[search_path + "_#{partial}"]
+          if partial_item = @items_by_logical_path[search_path + partial_path]
             unless partial_item.singleton?
               raise "Partial #{partial_item} cannot have {curly braces} in its filename"
             end
@@ -250,7 +251,7 @@ module Superfluous
             return result
           end
         end
-        searched_paths = from_item.partial_search_paths.map { |path| path + "_#{partial}.*" }
+        searched_paths = from_item.partial_search_paths.map { |path| path + "#{partial_path}.*" }
         raise "No template found for partial #{partial} (Searched for #{searched_paths.join(', ')})"
       end
     end

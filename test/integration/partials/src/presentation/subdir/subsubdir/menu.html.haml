@@ -1,4 +1,6 @@
+
 = partial :site, title: "Menu" do
+  = partial 'othersubsubdir/logo'  # should look for _logo, not _othersubsubdir
   %ul
     %li= partial :menu_item, color: "smaragdine", flavor: "unctious"
     %li= partial :menu_item, color: "fulvous", flavor: "umami"
