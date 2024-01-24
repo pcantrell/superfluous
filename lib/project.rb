@@ -1,7 +1,6 @@
 require_relative 'data/builder'
 require_relative 'presentation/builder'
 require_relative 'logging'
-require 'awesome_print'
 
 module Superfluous
   def self.work_dir(subdir)
@@ -25,7 +24,7 @@ module Superfluous
   end
 
   class Project
-    attr_reader :project_dir, :src_dir, :output_dir
+    attr_reader :project_dir, :src_dir, :output_dir, :data
 
     def initialize(project_dir:, logger:, output_dir: nil)
       @logger = logger
@@ -72,16 +71,6 @@ module Superfluous
           @logger.log "Parsed #{file_count} data files"
           data
         end
-      end
-
-      if ENV['dump_data']
-        @logger.log
-        @logger.log "──────────────────────── Data ────────────────────────"
-        @logger.log_indented do
-          @logger.log @data.ai(indent: -2, ruby19_syntax: true)
-        end
-        @logger.log "──────────────────────────────────────────────────────"
-        @logger.log
       end
     end
   end

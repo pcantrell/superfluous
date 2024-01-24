@@ -28,6 +28,10 @@ module Superfluous
 
     class Array < ::Array
       include TreeNode
+
+      def to_s
+        "[#{join(", ")}]"
+      end
     end
 
     class Dict
@@ -77,35 +81,38 @@ module Superfluous
       end
 
       def to_s(value_method: :to_s)
-        Fiber[:superf_to_s_depth] ||= 0
-        Fiber[:superf_to_s_depth] += 1
- 
-        if Fiber[:superf_to_s_depth] > 4
-          return "<<#{superf_data_path}>>"
-        end
-
-        "{ " + @table.map { |k,v| "#{k}: #{v.send(value_method)}" }.join(", ") + " }"
-      ensure
-        Fiber[:superf_to_s_depth] -= 1
+        "Dict{#{keys.join(", ")}}"
       end
 
       def inspect
-        "Dict@" + superf_data_path + to_s(value_method: :inspect)
+        top = Thread.current[:superf_inspect].nil?
+        Thread.current[:superf_inspect] ||= Set.new
+        return "{...#{superf_data_path}...}" if Thread.current[:superf_inspect].include?(self)
+
+        begin
+          Thread.current[:superf_inspect].add(self)
+          "Dict@" + superf_data_path + @table.inspect
+        ensure
+          Thread.current[:superf_inspect] = nil if top
+        end
       end
 
       def method_missing(method, *args, **kwargs)
-        if match = method.to_s.match(/^(?<key>.*)\=$/)
+        if match = method.to_s.match(/^(?<key>.*)\=$/)  # .foo =
           return @table[match[:key].to_sym] = args[0]
-        elsif match = method.to_s.match(/^(?<key>.*)\?$/)
+
+        elsif match = method.to_s.match(/^(?<key>.*)\?$/)  # .foo?
           unless args.empty? && kwargs.empty?
             raise "#{method}: Expected 0 args, got #{args.size} args + #{kwargs.size} keywords"
           end
           return @table[match[:key].to_sym]
-        elsif @table.has_key?(method)
+
+        elsif @table.has_key?(method)  # .foo
           unless args.empty? && kwargs.empty?
             raise "#{method}: Expected 0 args, got #{args.size} args + #{kwargs.size} keywords"
           end
           @table[method]
+
         else
           raise NoMethodError, "No Dict key `#{method}` for #{superf_data_path};"+
             " available keys are: #{keys}"

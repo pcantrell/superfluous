@@ -18,7 +18,6 @@ Gem::Specification.new do |s|
 
   # Util
   s.add_runtime_dependency "activesupport", "~> 7.1"
-  s.add_runtime_dependency "awesome_print", "~> 1.9"
   s.add_runtime_dependency "ansi", "~> 1.5"
 
   # Server

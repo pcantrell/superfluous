@@ -7,10 +7,11 @@ module Superfluous
       args = args.dup  # Save ARGV for self-relaunch
       live = !!args.delete("--live")
       verbose = !!args.delete("--verbose")
+      inspect_data = !!args.delete("--inspect-data")
 
       usage_and_exit! if args.length != 1
 
-      Superfluous::CLI.new(project_dir: args[0], live:, verbose:)
+      Superfluous::CLI.new(project_dir: args[0], live:, verbose:, inspect_data:)
     end
 
     def self.usage_and_exit!
@@ -18,15 +19,17 @@ module Superfluous
       exit 1
     end
 
-    def initialize(project_dir:, live:, verbose:)
+    def initialize(project_dir:, live:, verbose:, inspect_data:)
       logger = Logger.new
       logger.verbose = verbose
 
       @project = Project.new(project_dir:, logger:)
 
+      @inspect_data = inspect_data
+
       build_guarded
 
-      live_serve if live
+      live_serve if live || inspect_data
     end
     
     def live_serve
@@ -43,12 +46,16 @@ module Superfluous
       relaunch_on_change("Gemfile", Pathname.new(ENV['BUNDLE_GEMFILE']).parent, only: /^Gemfile.*/)
 
       # Start a local web server
-      override_web_server_logging!
-      server = Adsf::Server.new(live: true, root: @project.output_dir, auto_extensions: "html")
-      %w[INT TERM].each do |s|
-        Signal.trap(s) { server.stop }
+      if @inspect_data
+        interactive_inspect_data
+      else
+        override_web_server_logging!
+        server = Adsf::Server.new(live: true, root: @project.output_dir, auto_extensions: "html")
+        %w[INT TERM].each do |s|
+          Signal.trap(s) { server.stop }
+        end
+        server.run
       end
-      server.run
     end
 
     def rebuild_on_change(dir, **opts)
@@ -68,7 +75,14 @@ module Superfluous
 
     def build_guarded(**kwargs)
       begin
-        @project.build(**kwargs)
+        if @inspect_data
+          @project.read_data
+          if @inspect_data_thread
+            @inspect_data_thread.raise DataReloaded
+          end
+        else
+          @project.build(**kwargs)
+        end
       rescue SystemExit, Interrupt
         raise
       rescue Exception => e
@@ -117,6 +131,75 @@ module Superfluous
       puts
     end
 
+    def interactive_inspect_data
+      @inspect_data_thread = Thread.current
+      loop do
+        begin
+          dump_data if @inspect_data_path
+        rescue => e
+          puts e.full_message
+        end
+
+        puts
+        @inspect_data_path ||= []
+        path_str = @inspect_data_path.map { |k| k =~ /^\d+$/ ? "[#{k}]" : ".#{k}"}.join
+        print ANSI.green("data" + path_str + ANSI.dark("> "))
+        STDOUT.flush
+        new_path = STDIN.readline.strip
+        puts
+
+        while new_path.start_with?("..")
+          @inspect_data_path.pop
+          new_path[0] = ""
+        end
+        if new_path =~ /^data(\.|$)/
+          new_path.delete_prefix!('data')
+          @inspect_data_path = []
+        end
+        @inspect_data_path += new_path
+          .split(/[\[\]\.]/)
+          .reject(&:blank?)
+      rescue DataReloaded
+        # Restart from the top
+      end
+    end
+
+    def dump_data
+      target = @project.data
+      @inspect_data_path.each do |attr|
+        puts "→ #{attr}"
+        attr = attr.to_i if target.is_a?(Array)
+        target = target[attr]
+      end
+
+      print ANSI.red("(#{target.class}) ")
+      case target
+        when Superfluous::Data::Dict
+          puts "{"
+          target.each_pair do |k, v|
+            puts "  #{k}: #{ANSI.blue(truncate(v.to_s))}"
+            STDOUT.flush
+          end
+          puts "}"
+        when Array
+          puts "["
+          target.each.with_index do |elem, index|
+            puts "  #{index}: #{ANSI.blue(truncate(elem.to_s))}"
+          end
+          puts "]"
+        else
+          puts ANSI.blue(target)
+      end
+    end
+
+    def truncate(s)
+      if s.length > 80
+        s[0...80] + "..."
+      else
+        s
+      end.gsub("\n", "\\n")
+    end
+
     # Turn back! Only horrifying monkey patches lie beyond this point.
 
     def override_web_server_logging!
@@ -129,6 +212,8 @@ module Superfluous
       # Hack to colorize adsf’s startup message with the site URL
       ::Adsf::Server.prepend(AdsfLogOverride)
     end
+
+    class DataReloaded < Exception; end
 
     module RackLogOverride
       LOG_MUTEX = Mutex.new
@@ -160,5 +245,6 @@ module Superfluous
         end
       end
     end
+
   end
 end

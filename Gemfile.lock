@@ -6,7 +6,6 @@ PATH
       adsf (~> 1.5)
       adsf-live (~> 1.5)
       ansi (~> 1.5)
-      awesome_print (~> 1.9)
       kramdown (~> 2.4)
       tilt (~> 2.3)
 
@@ -33,7 +32,6 @@ GEM
       listen (~> 3.0)
       rack-livereload (~> 0.3)
     ansi (1.5.0)
-    awesome_print (1.9.2)
     base64 (0.2.0)
     bigdecimal (3.1.5)
     builder (3.2.4)
