@@ -279,7 +279,35 @@ class ErrorTest < SuperfluousTest
           end
         EOS
       },
-      expected_message: "Property {bar} appears in item path ❰foo{bar}❱, but no value given for bar; available props are: data, baz, blarg"
+      expected_message: "Unable to resolve {bar} in item path ❰foo{bar}❱: bar property of props is either missing or nil; available properties are: data, baz, blarg"
+    )
+  end
+
+  def test_missing_nested_filename_prop
+    build_and_check_error(
+      files: {
+        "presentation/foo{bar.baz}.superf" => <<~EOS
+          ––– script.rb –––
+          def build
+            render(bar: { zoof: 3 })
+          end
+        EOS
+      },
+      expected_message: "Unable to resolve {bar.baz} in item path ❰foo{bar.baz}❱: baz property of props.bar is either missing or nil; available properties are: zoof"
+    )
+  end
+
+  def test_exception_from_filename_prop
+    build_and_check_error(
+      files: {
+        "presentation/foo{bar.baz.include?}.superf" => <<~EOS
+          ––– script.rb –––
+          def build
+            render(bar: { baz: "hello" })
+          end
+        EOS
+      },
+      expected_message: "Unable to resolve {bar.baz.include?} in item path ❰foo{bar.baz.include?}❱: include? property of props.bar.baz raised an ArgumentError: wrong number of arguments (given 0, expected 1)"
     )
   end
 

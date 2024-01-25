@@ -88,12 +88,39 @@ module Superfluous
 
       def output_path(props:)
         logical_path.parent + logical_path.basename.to_s.gsub(PROP_PATTERN) do
-          key = $1.to_sym
-          unless props.has_key?(key)
-            raise "Property {#{$1}} appears in item path #{self}, but no value given for #{$1};" +
-              " available props are: #{props.keys.join(', ')}"
+          prop_spec = $1
+          key_chain = [:props]
+          target = props
+
+          prop_spec.split('.').map(&:to_sym).each do |key|
+            error_msg = nil
+            begin
+              new_target = if target.respond_to?(key)
+                target.send(key)
+              elsif target.respond_to?(:[])
+                target[key]
+              end
+
+              unless new_target
+                error_msg = "is either missing or nil"
+                if target.respond_to?(:keys)
+                  error_msg += "; available properties are: #{target.keys.join(', ')}"
+                end
+              end
+            rescue => e
+              error_msg = "raised an " + e.class.name + ": " + e.message
+            end
+
+            if error_msg
+              raise "Unable to resolve {#{prop_spec}} in item path #{self}:" +
+                " #{key} property of #{key_chain.join('.')} " +
+                error_msg
+            end
+
+            target = new_target
+            key_chain << key
           end
-          props[key]
+          target
         end
       end
 

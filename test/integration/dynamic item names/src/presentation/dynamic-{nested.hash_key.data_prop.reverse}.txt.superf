@@ -1,0 +1,5 @@
+––– script.rb –––
+
+def build(data:)
+  render(nested: { hash_key: data.fancy_data }, content: "tasty!")
+end
