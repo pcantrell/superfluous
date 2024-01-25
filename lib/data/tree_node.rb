@@ -11,10 +11,10 @@ module Superfluous
 
       attr_accessor :superf_name  # for internal use in error messages
 
-      def attach!(parent:, id:, index:)
+      def attach!(parent:, id: nil, index: nil)
         @parent = parent
-        @id = id&.to_sym
-        @index = index
+        @id = id&.to_sym if id
+        @index = index if index
       end
 
       def superf_data_path

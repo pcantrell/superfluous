@@ -13,7 +13,6 @@ module Superfluous
       raise "#{dir.to_s} is not a directory" unless dir.directory?
 
       data = Dict.new
-      data.superf_name = "data" if top_level
 
       file_count = 0
       dir.each_child do |child|
@@ -47,6 +46,7 @@ module Superfluous
       end
 
       data = apply_script_transform(dir, data)
+      data.superf_name = "data" if top_level && data.respond_to?(:superf_name=)
 
       [data, file_count]
     end
@@ -108,41 +108,49 @@ module Superfluous
       end
     end
 
-    # Recursively wrap eligible types (hashes and arrays) as Superfluous TreeNodes, leaving other
-    # objects untouched. Sets id, index, and parent properties as appropriate.
-    #
-    def self.wrap(data, id: nil, index: nil, parent: nil)
-      case data
-        when Hash
-          result = Dict.new
-          result.attach!(parent:, id:, index:)
-          data.each do |key, value|
-            result[key] = wrap(value, id: key, parent: result)
-          end
-          result
-        when ::Array
-          result = Array.new
-          result.concat(
-            data.map.with_index do |elem, index|
-              wrap(elem, index:, parent: result)
-            end
-          )
-          result.attach!(parent:, id:, index:)
-          result
-        else
-          data
-      end
-    end
-
     def self.apply_script_transform(dir, data)
       Superfluous::read_dir_script(dir, parent_class: DataScriptBase).new
         .transform(data)  # TODO: But might scripts want to inherit from parents? That breaks this!
     end
 
+    module DataWrapping
+      # Recursively wrap eligible types (hashes and arrays) as Superfluous TreeNodes, leaving other
+      # objects untouched. Sets id, index, and parent properties as appropriate.
+      #
+      def wrap(data, id: nil, index: nil, parent: nil)
+        case data
+          when TreeNode
+            data
+          when Hash
+            result = Dict.new
+            result.attach!(parent:, id:, index:)
+            data.each do |key, value|
+              result[key] = wrap(value, id: key, parent: result)
+            end
+            result
+          when ::Array
+            result = Array.new
+            result.concat(
+              data.map.with_index do |elem, index|
+                wrap(elem, index:, parent: result)
+              end
+            )
+            result.attach!(parent:, id:, index:)
+            result
+          else
+            data
+        end
+      end
+    end
+
+    extend DataWrapping
+
     class DataScriptBase
       def transform(data)
         data
       end
+
+      include DataWrapping
     end
   end
 end
