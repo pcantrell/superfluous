@@ -109,7 +109,7 @@ module Superfluous
     end
 
     def self.apply_script_transform(dir, data)
-      Superfluous::read_dir_script(dir, parent_class: DataScriptBase).new
+      Superfluous::read_dir_scripts(dir, parent_class: DataScriptBase).new
         .transform(data)  # TODO: But might scripts want to inherit from parents? That breaks this!
     end
 

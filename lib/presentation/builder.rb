@@ -132,12 +132,12 @@ module Superfluous
     private
 
       def read_items(root_dir:, relative_subdir: Pathname(""), scope_parent_class:)
-        scope_parent_class = Superfluous::read_dir_script(
+        scope_parent_class = Superfluous::read_dir_scripts(
           root_dir + relative_subdir, parent_class: scope_parent_class)
 
         (root_dir + relative_subdir).each_child(false) do |child|
           # Ignore dir script; we read it above
-          next if child.to_s == DIR_SCRIPT_FILENAME
+          next if Superfluous::is_dir_script?(child)
 
           child_path = relative_subdir + child
           if (root_dir + child_path).directory?

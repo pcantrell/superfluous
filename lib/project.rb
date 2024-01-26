@@ -10,13 +10,17 @@ module Superfluous
     result
   end
 
-  DIR_SCRIPT_FILENAME = "_script.rb"
+  def self.is_dir_script?(pathname)
+    pathname.basename.to_s =~ /^_.*\.rb$/
+  end
 
-  def self.read_dir_script(dir, parent_class: Object)  # both data and presentation share this
-    dir_script_file = dir + DIR_SCRIPT_FILENAME
-    if dir_script_file.exist?
+  def self.read_dir_scripts(dir, parent_class: Object)  # both data and presentation share this
+    dir_script_files = dir.children.filter { |f| is_dir_script?(f) }
+    if dir_script_files.any?
       return Class.new(parent_class) do |new_scope|
-        new_scope.class_eval(dir_script_file.read, dir_script_file.to_s)
+        dir_script_files.each do |script_file|  # TODO: possible to detect conflicting defs?
+          new_scope.class_eval(script_file.read, script_file.to_s)
+        end
       end
     else
       return parent_class
