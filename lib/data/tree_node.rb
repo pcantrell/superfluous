@@ -2,8 +2,11 @@ module Superfluous
   module Data
 
     module TreeNode
-      attr_reader :id, :index, :parent
-      %w[id index parent].each do |attr|
+      %i[id index parent].each do |attr|
+        define_method(attr) do |*args|
+          @table[attr] || instance_variable_get("@#{attr}")
+        end
+
         define_method("#{attr}=") do |*args|
           raise "#{self.class}##{attr} is read-only; use `attach!` to reparent a node"
         end
