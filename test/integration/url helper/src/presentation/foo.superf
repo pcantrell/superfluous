@@ -1,0 +1,12 @@
+––– script.rb –––
+
+def self.id
+    :foo
+end
+
+––– template.erb –––
+
+<h1>I am foo</h1>
+<% 3.times do |n| %>
+  <a href="<%= url(:bar, num: n) %>">Bar <%= n %></a>
+<% end %>

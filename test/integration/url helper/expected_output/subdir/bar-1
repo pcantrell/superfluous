@@ -1,0 +1,3 @@
+<h1>I am bar 1</h1>
+<a href="/foo">foo</a>
+<a href="/subdir/baz-10">Corresponding baz</a>

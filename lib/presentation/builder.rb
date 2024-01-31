@@ -19,6 +19,7 @@ module Superfluous
         @concise_ids = {}
 
         @items_by_logical_path = {}  # logical path → Item
+        @items_by_id = {}            # id symbol → Item
         read_items(root_dir: presentation_dir, scope_parent_class: Renderer::RenderingScope)
       end
 
@@ -52,6 +53,10 @@ module Superfluous
         @output_dir = output_dir.realpath
 
         @after_build_actions = []
+
+        @items_by_logical_path.values.each do |item|
+          prepare_item(item, data:)
+        end
 
         @items_by_logical_path.values.each do |item|
           next if item.partial?
@@ -153,11 +158,22 @@ module Superfluous
         end
       end
 
+      def prepare_item(item, data:)
+        item.ensure_prepared!(
+          Renderer::PreparationContext.new(item:, data:, builder: self))
+        
+        if id = item.scope_class.id&.to_sym
+          if existing_item = @items_by_id[id]
+            raise "Item id #{id.inspect} is claimed by multiple items:" +
+              "\n  #{existing_item}" +
+              "\n  #{item}"
+          end
+          @items_by_id[id] = item
+        end
+      end
+
       def build_item(item, data:, props: {}, nested_content: nil, &final_step)
         check_output_count(item) do |count_output|
-          item.ensure_prepared!(
-            Renderer::PreparationContext.new(item:, data:, builder: self))
-
           partial_renderer = lambda do |partial, **props, &block|
             render_partial(partial, from_item: item, data:, **props, &block)
           end
@@ -174,7 +190,7 @@ module Superfluous
               end
 
               new_context = context.with(
-                scope: item.scope_class.new(renderer:, partial_renderer:))
+                scope: item.scope_class.new(renderer:, partial_renderer:, item_url_resolver:))
               piece.renderer.render(new_context, &next_step)
             end
           end
@@ -233,6 +249,15 @@ module Superfluous
           if output_count > 1
             @logger.log "#{subsequent_line_prefix} → …#{output_count - 1} more…"
           end
+        end
+      end
+
+      def item_url_resolver
+        lambda do |id, **props|
+          unless item = @items_by_id[id.to_sym]
+            raise "No item has the ID #{id.inspect}\nAvailable item IDs: #{@items_by_id.keys}"
+          end
+          "/" + item.output_path(props:).to_s  # TODO: strip ext!
         end
       end
 

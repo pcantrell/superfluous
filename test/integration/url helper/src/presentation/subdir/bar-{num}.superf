@@ -1,0 +1,17 @@
+––– script.rb –––
+
+def self.id
+  :bar
+end
+
+def build
+  3.times do |num|
+    render(num:, baz: num * 10)
+  end
+end
+
+––– template.erb –––
+
+<h1>I am bar <%= num %></h1>
+<a href="<%= url(:foo) %>">foo</a>
+<a href="<%= url(:baz, baz:) %>">Corresponding baz</a>

@@ -15,6 +15,7 @@ module Superfluous
       end
 
       attr_reader :full_path, :root_dir, :relative_path, :line_num, :ext
+      attr_reader :id  # for references from other items
 
       def content
         @content || full_path.read

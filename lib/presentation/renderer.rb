@@ -102,9 +102,10 @@ module Superfluous
       # - any custom methods defined by the script.
       #
       class RenderingScope
-        def initialize(renderer:, partial_renderer:)
+        def initialize(renderer:, partial_renderer:, item_url_resolver:)
           @renderer = renderer
           @partial_renderer = partial_renderer
+          @item_url_resolver = item_url_resolver
         end
 
         def build
@@ -117,6 +118,14 @@ module Superfluous
 
         def render(**props_from_script)
           @renderer.call(**props_from_script)
+        end
+
+        def url(id, **props)
+          @item_url_resolver.call(id, **props)
+        end
+
+        def self.id
+          nil
         end
       end
 
