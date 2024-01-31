@@ -159,8 +159,7 @@ module Superfluous
       end
 
       def prepare_item(item, data:)
-        item.ensure_prepared!(
-          Renderer::PreparationContext.new(item:, data:, builder: self))
+        item.prepare!(Renderer::PreparationContext.new(item:, data:, builder: self))
         
         if id = item.scope_class.id&.to_sym
           if existing_item = @items_by_id[id]

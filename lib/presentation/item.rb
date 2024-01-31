@@ -130,11 +130,8 @@ module Superfluous
           .strip_leading_slash        # ...turn absolute `/a/b/c` back into logical `a/b/c`
       end
 
-      def ensure_prepared!(context)
-        @prepared ||= begin
-          pieces.each { |piece| piece.renderer.prepare(context) }
-          :prepared
-        end
+      def prepare!(context)
+        pieces.each { |piece| piece.renderer.prepare(context) }
       end
 
       def to_s
