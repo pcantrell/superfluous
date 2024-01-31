@@ -27,8 +27,10 @@ module Superfluous
     end
   end
 
+  ProjectConfig = ::Data.define(:auto_extensions, :index_filenames)
+
   class Project
-    attr_reader :project_dir, :src_dir, :output_dir, :data
+    attr_reader :project_dir, :src_dir, :output_dir, :data, :config
 
     def initialize(project_dir:, logger:, output_dir: nil)
       @logger = logger
@@ -41,6 +43,12 @@ module Superfluous
         else
           @project_dir + "output"
         end
+
+      # TODO: Make this configurable
+      @config = ProjectConfig.new(
+        auto_extensions: %w[html],
+        index_filenames: %w[index.html],
+      )
     end
 
     def data_dir
@@ -62,8 +70,14 @@ module Superfluous
         end
 
         @logger.log_timing("Applying presentation", "Presentation applied") do
-          Presentation::Builder.new(presentation_dir: presentation_dir, logger: @logger)
-            .build_clean(data: @data, output_dir: @output_dir)
+          Presentation::Builder.new(
+            presentation_dir: presentation_dir,
+            logger: @logger,
+            project_config: @config
+          ).build_clean(
+            data: @data,
+            output_dir: @output_dir
+          )
         end
       end
     end

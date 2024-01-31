@@ -1,4 +1,6 @@
 <h1>I am foo</h1>
-  <a href="/subdir/bar-0">Bar 0</a>
-  <a href="/subdir/bar-1">Bar 1</a>
-  <a href="/subdir/bar-2">Bar 2</a>
+<a href="/subdir/">All bar</a>
+<a href="/subdir/notindex">No bar</a>
+  <a href="/subdir/bar-0.zok">Bar 0</a>
+  <a href="/subdir/bar-1.zok">Bar 1</a>
+  <a href="/subdir/bar-2.zok">Bar 2</a>

@@ -1,0 +1,9 @@
+––– script.rb –––
+
+def self.id
+  :allbar
+end
+
+––– template.html –––
+
+I am an index

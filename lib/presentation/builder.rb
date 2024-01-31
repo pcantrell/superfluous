@@ -10,11 +10,12 @@ module Superfluous
     # Retains compiled scripts and templates, so create a new instance to pick up changes.
     #
     class Builder
-      def initialize(presentation_dir:, logger:)
+      def initialize(presentation_dir:, logger:, project_config:)
         raise "#{presentation_dir.to_s} is not a directory" unless presentation_dir.directory?
 
         @presentation_dir = presentation_dir
         @logger = logger
+        @project_config = project_config
 
         @concise_ids = {}
 
@@ -257,7 +258,14 @@ module Superfluous
           unless item = @items_by_id[id.to_sym]
             raise "No item has the ID #{id.inspect}\nAvailable item IDs: #{@items_by_id.keys}"
           end
-          "/" + item.output_path(props:).to_s  # TODO: strip ext!
+          path = "/" + item.output_path(props:).to_s
+          @project_config.index_filenames.each do |index|
+            path.sub! %r{/#{index}$}, "/"
+          end
+          @project_config.auto_extensions.each do |ext|
+            path.sub! %r{\.#{ext}$}, ""
+          end
+          path
         end
       end
 

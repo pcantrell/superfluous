@@ -50,7 +50,12 @@ module Superfluous
         interactive_inspect_data
       else
         override_web_server_logging!
-        server = Adsf::Server.new(live: true, root: @project.output_dir, auto_extensions: "html")
+        server = Adsf::Server.new(
+          live: true,
+          root: @project.output_dir,
+          index_filenames: @project.config.index_filenames,
+          auto_extensions: @project.config.auto_extensions,
+        )
         %w[INT TERM].each do |s|
           Signal.trap(s) { server.stop }
         end

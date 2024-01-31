@@ -7,6 +7,8 @@ end
 ––– template.erb –––
 
 <h1>I am foo</h1>
+<a href="<%= url(:allbar) %>">All bar</a>
+<a href="<%= url(:nobar) %>">No bar</a>
 <% 3.times do |n| %>
   <a href="<%= url(:bar, num: n) %>">Bar <%= n %></a>
 <% end %>
