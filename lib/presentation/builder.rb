@@ -253,6 +253,7 @@ module Superfluous
 
       def item_url_resolver
         lambda do |id, **props|
+          id ||= props.keys.first
           unless item = @items_by_id[id.to_sym]
             raise "No item has the ID #{id.inspect}\nAvailable item IDs: #{@items_by_id.keys}"
           end

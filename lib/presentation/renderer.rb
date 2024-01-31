@@ -120,7 +120,7 @@ module Superfluous
           @renderer.call(**props_from_script)
         end
 
-        def url(id, **props)
+        def url(id = nil, **props)
           @item_url_resolver.call(id, **props)
         end
 

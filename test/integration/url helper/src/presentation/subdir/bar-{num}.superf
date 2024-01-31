@@ -6,7 +6,7 @@ end
 
 def build
   3.times do |num|
-    render(num:, baz: num * 10)
+    render(num:)
   end
 end
 
@@ -14,4 +14,4 @@ end
 
 <h1>I am bar <%= num %></h1>
 <a href="<%= url(:foo) %>">foo</a>
-<a href="<%= url(:baz, baz:) %>">Corresponding baz</a>
+<a href="<%= url(baz: num * 10) %>">Corresponding baz</a>
