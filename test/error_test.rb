@@ -279,7 +279,7 @@ class ErrorTest < SuperfluousTest
           end
         EOS
       },
-      expected_message: "Unable to resolve {bar} in item path ❰foo{bar}❱: bar property of props is either missing or nil; available properties are: data, baz, blarg"
+      expected_message: "Unable to resolve property {bar} for item path ❰foo{bar}❱: bar property of props is either missing or nil; available properties are: data, baz, blarg"
     )
   end
 
@@ -293,7 +293,7 @@ class ErrorTest < SuperfluousTest
           end
         EOS
       },
-      expected_message: "Unable to resolve {bar.baz} in item path ❰foo{bar.baz}❱: baz property of props.bar is either missing or nil; available properties are: zoof"
+      expected_message: "Unable to resolve property {bar.baz} for item path ❰foo{bar.baz}❱: baz property of props.bar is either missing or nil; available properties are: zoof"
     )
   end
 
@@ -307,7 +307,50 @@ class ErrorTest < SuperfluousTest
           end
         EOS
       },
-      expected_message: "Unable to resolve {bar.baz.include?} in item path ❰foo{bar.baz.include?}❱: include? property of props.bar.baz raised an ArgumentError: wrong number of arguments (given 0, expected 1)"
+      expected_message: "Unable to resolve property {bar.baz.include?} for item path ❰foo{bar.baz.include?}❱: include? property of props.bar.baz raised an ArgumentError: wrong number of arguments (given 0, expected 1)"
+    )
+  end
+
+  def test_url_of_nonexistent_item
+    build_and_check_error(
+      files: {
+        "presentation/foo.superf" => <<~EOS
+          ––– script.rb –––
+          def build
+            render(content: url(:bar))
+          end
+        EOS
+      }.merge(
+        "presentation/other.superf" => <<~EOS
+          ––– script.rb –––
+          def self.id
+            :baz
+          end
+
+          def build
+            render(content: "hi")
+          end
+        EOS
+      ),
+      expected_message: "No item has the ID :bar\nAvailable item IDs: [:baz]"
+    )
+  end
+
+  def test_url_with_missing_param
+    build_and_check_error(
+      files: {
+        "presentation/foo{bar}.superf" => <<~EOS
+          ––– script.rb –––
+          def self.id
+            :foo
+          end
+
+          def build
+            render(content: url(:foo))
+          end
+        EOS
+      },
+      expected_message: "Unable to resolve property {bar} for item path ❰foo{bar}❱"
     )
   end
 

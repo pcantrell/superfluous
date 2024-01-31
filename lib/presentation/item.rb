@@ -113,7 +113,7 @@ module Superfluous
             end
 
             if error_msg
-              raise "Unable to resolve {#{prop_spec}} in item path #{self}:" +
+              raise "Unable to resolve property {#{prop_spec}} for item path #{self}:" +
                 " #{key} property of #{key_chain.join('.')} " +
                 error_msg
             end
