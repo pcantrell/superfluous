@@ -1,0 +1,13 @@
+––– script.rb –––
+
+require "two"
+require "subdir/four"
+
+def build(data:)
+  render content: <<~EOS
+    1. #{data.noel}
+    3. #{two("nocturnes")}
+    2. #{data.novel}
+    4. #{four("epices")}
+  EOS
+end

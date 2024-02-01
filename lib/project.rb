@@ -52,32 +52,38 @@ module Superfluous
     end
 
     def data_dir
-      @data_dir ||= @src_dir + "data"
+      @src_dir + "data"
     end
 
     def presentation_dir
       @src_dir + "presentation"
     end
 
+    def lib_dir
+      @src_dir + "lib"
+    end
+
     def build(use_existing_data: false)
       @logger.log_timing("Building", "Build completed") do
-        @output_dir.mkdir unless @output_dir.exist?
+        with_project_load_path do
+          @output_dir.mkdir unless @output_dir.exist?
 
-        if use_existing_data && @data
-          @logger.log("Using existing data")
-        else
-          read_data
-        end
+          if use_existing_data && @data
+            @logger.log("Using existing data")
+          else
+            read_data
+          end
 
-        @logger.log_timing("Applying presentation", "Presentation applied") do
-          Presentation::Builder.new(
-            presentation_dir: presentation_dir,
-            logger: @logger,
-            project_config: @config
-          ).build_clean(
-            data: @data,
-            output_dir: @output_dir
-          )
+          @logger.log_timing("Applying presentation", "Presentation applied") do
+            Presentation::Builder.new(
+              presentation_dir: presentation_dir,
+              logger: @logger,
+              project_config: @config
+            ).build_clean(
+              data: @data,
+              output_dir: @output_dir
+            )
+          end
         end
       end
     end
@@ -90,6 +96,16 @@ module Superfluous
           data
         end
       end
+    end
+
+    def with_project_load_path(&action)
+      original_load_path = $LOAD_PATH
+      $LOAD_PATH.unshift(lib_dir) if lib_dir.exist?
+
+      yield
+
+    ensure
+      $LOAD_PATH.replace(original_load_path)
     end
   end
 end
