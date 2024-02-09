@@ -12,6 +12,8 @@ module Superfluous
         parser.on("-l", "--live", "Start a local web server with live updates on rebuild")
         parser.on("-v", "--verbose", "Show more details during build")
         parser.on("-e", "--explorer", "Open an interactive console for exploring data")
+        parser.on("-o", "--output DIR", "Put build results in the given directory",
+          "WARNING: Deletes all existing contents of the given directory")
       end
 
       opts = {}
@@ -28,13 +30,13 @@ module Superfluous
       Superfluous::CLI.new(project_dir: args[0], **opts)
     end
 
-    def initialize(project_dir:, live: false, verbose: false, explorer: false)
+    def initialize(project_dir:, output: nil, live: false, verbose: false, explorer: false)
       logger = Logger.new
       logger.verbose = verbose
 
-      @project = Project.new(project_dir:, logger:)
+      @project = Project.new(project_dir:, logger:, output_dir: output)
 
-      @inspect_data = explorer
+      @data_explorer = explorer
 
       build_guarded
 
@@ -55,8 +57,8 @@ module Superfluous
       relaunch_on_change("Gemfile", Pathname.new(ENV['BUNDLE_GEMFILE']).parent, only: /^Gemfile.*/)
 
       # Start a local web server
-      if @inspect_data
-        interactive_inspect_data
+      if @data_explorer
+        run_data_explorer
       else
         override_web_server_logging!
         server = Adsf::Server.new(
@@ -89,10 +91,10 @@ module Superfluous
 
     def build_guarded(**kwargs)
       begin
-        if @inspect_data
+        if @data_explorer
           @project.read_data
-          if @inspect_data_thread
-            @inspect_data_thread.raise DataReloaded
+          if @data_explorer_thread
+            @data_explorer_thread.raise DataReloaded
           end
         else
           @project.build(**kwargs)
@@ -145,32 +147,32 @@ module Superfluous
       puts
     end
 
-    def interactive_inspect_data
-      @inspect_data_thread = Thread.current
+    def run_data_explorer
+      @data_explorer_thread = Thread.current
       loop do
         begin
-          dump_data if @inspect_data_path
+          dump_data if @data_explorer_path
         rescue => e
           puts e.full_message
         end
 
         puts
-        @inspect_data_path ||= []
-        path_str = @inspect_data_path.map { |k| k =~ /^\d+$/ ? "[#{k}]" : ".#{k}"}.join
+        @data_explorer_path ||= []
+        path_str = @data_explorer_path.map { |k| k =~ /^\d+$/ ? "[#{k}]" : ".#{k}"}.join
         print ANSI.green("data" + path_str + ANSI.dark("> "))
         STDOUT.flush
         new_path = STDIN.readline.strip
         puts
 
         while new_path.start_with?("..")
-          @inspect_data_path.pop
+          @data_explorer_path.pop
           new_path[0] = ""
         end
         if new_path =~ /^data(\.|$)/
           new_path.delete_prefix!('data')
-          @inspect_data_path = []
+          @data_explorer_path = []
         end
-        @inspect_data_path += new_path
+        @data_explorer_path += new_path
           .split(/[\[\]\.]/)
           .reject(&:blank?)
       rescue DataReloaded
@@ -180,7 +182,7 @@ module Superfluous
 
     def dump_data
       target = @project.data
-      @inspect_data_path.each do |attr|
+      @data_explorer_path.each do |attr|
         puts "→ #{attr}"
         attr = attr.to_i if target.is_a?(Array)
         target = target[attr]
