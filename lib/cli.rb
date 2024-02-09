@@ -1,3 +1,4 @@
+require 'optparse'
 require 'ansi'
 require_relative 'project'
 
@@ -5,31 +6,39 @@ module Superfluous
   class CLI
     def self.run(args)
       args = args.dup  # Save ARGV for self-relaunch
-      live = !!args.delete("--live")
-      verbose = !!args.delete("--verbose")
-      inspect_data = !!args.delete("--inspect-data")
 
-      usage_and_exit! if args.length != 1
+      opt_parser = OptionParser.new do |parser|
+        parser.banner = "Usage: superfluous <project-dir> [options]"
+        parser.on("-l", "--live", "Start a local web server with live updates on rebuild")
+        parser.on("-v", "--verbose", "Show more details during build")
+        parser.on("-e", "--explorer", "Open an interactive console for exploring data")
+      end
 
-      Superfluous::CLI.new(project_dir: args[0], live:, verbose:, inspect_data:)
+      opts = {}
+      begin
+        opt_parser.parse!(args, into: opts)
+        raise "missing project dir argument" if args.length != 1
+      rescue => e
+        puts
+        puts "ERROR: #{e}"
+        STDERR.puts opt_parser.help
+        exit 1
+      end
+
+      Superfluous::CLI.new(project_dir: args[0], **opts)
     end
 
-    def self.usage_and_exit!
-      STDERR.puts "usage: superfluous <project-dir> [--live] [--verbose]"
-      exit 1
-    end
-
-    def initialize(project_dir:, live:, verbose:, inspect_data:)
+    def initialize(project_dir:, live: false, verbose: false, explorer: false)
       logger = Logger.new
       logger.verbose = verbose
 
       @project = Project.new(project_dir:, logger:)
 
-      @inspect_data = inspect_data
+      @inspect_data = explorer
 
       build_guarded
 
-      live_serve if live || inspect_data
+      live_serve if live || explorer
     end
     
     def live_serve
