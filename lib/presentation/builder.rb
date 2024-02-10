@@ -279,7 +279,9 @@ module Superfluous
 
             result = nil
             build_item(partial_item, data:, props:, nested_content:) do |context|
-              result = context.props[:content].html_safe
+              content = context.props[:content]
+              content = content.read if content.is_a?(Pathname)  # TODO: add test
+              result = content.html_safe
             end
             return result
           end
