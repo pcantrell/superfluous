@@ -15,9 +15,9 @@ end
   %body
     Some greetings with Y in them:
     %ul
-      %li= partial "css-nesting-partial", message: "Ahoy"
-      %li= partial "css-nesting-partial", message: "Howdy"
-      %li= partial "css-nesting-partial", message: "Yo"
+      %li= partial "_css-nesting-partial", message: "Ahoy"
+      %li= partial "_css-nesting-partial", message: "Howdy"
+      %li= partial "_css-nesting-partial", message: "Yo"
 
 ––– style.sass –––
 

@@ -47,7 +47,7 @@ module Superfluous
         @scope_class = scope_class
         @pieces_by_kind = {}
         @singleton = @logical_path.basename.to_s !~ PROP_PATTERN
-        @partial = logical_path.basename.to_s =~ PARTIAL_PATTERN
+        @partial = logical_path.each_filename.any? { |part| part =~ PARTIAL_PATTERN }
       end
 
       attr_reader :logical_path, :scope_class

@@ -76,7 +76,7 @@ class ErrorTest < SuperfluousTest
             raise 'whoosh'
           end
           ––– template.haml –––
-          = partial 'helper' do
+          = partial '_helper' do
             - helper
         EOF
       }.merge(
@@ -143,7 +143,7 @@ class ErrorTest < SuperfluousTest
       }.merge(
         "presentation/main.superf" => <<~EOF
           ––– template.haml –––
-          %p= partial 'no-render'
+          %p= partial '_no-render'
         EOF
       ),
       expected_message: "Singleton ❰_no-render❱ rendered 0 times, but should have rendered exactly once",
@@ -166,7 +166,7 @@ class ErrorTest < SuperfluousTest
       }.merge(
         "presentation/main.superf" => <<~EOF
           ––– template.haml –––
-          %p= partial 'double-render'
+          %p= partial '_double-render'
         EOF
       ),
       expected_message: "Singleton ❰_double-render❱ attempted to render multiple times",
@@ -228,9 +228,9 @@ class ErrorTest < SuperfluousTest
   def test_missing_partial
     build_and_check_error(
       files: {
-        "presentation/a/b/c.haml" => "= partial 'florgblat'"
+        "presentation/a/b/c.haml" => "= partial '_florgblat'"
       },
-      expected_message: "No template found for partial florgblat (Searched for a/b/_florgblat.*, a/_florgblat.*, _florgblat.*)",
+      expected_message: "No template found for partial _florgblat (Searched for a/b/_florgblat.*, a/_florgblat.*, _florgblat.*)",
       expected_in_backtrace: ["《src_dir》/presentation/a/b/c.haml:1:"]
     )
   end
@@ -238,7 +238,7 @@ class ErrorTest < SuperfluousTest
   def test_partial_with_props
     build_and_check_error(
       files: {
-        "presentation/main.haml" => "= partial 'helper{oops}'",
+        "presentation/main.haml" => "= partial '_helper{oops}'",
         "presentation/_helper{oops}.haml" => "%b oops"
       },
       expected_message: "Partial ❰_helper{oops}❱ cannot have {curly braces} in its filename",
@@ -409,7 +409,7 @@ class ErrorTest < SuperfluousTest
   def test_yield_from_partial_without_nested_content
     build_and_check_error(
       files: {
-        "presentation/foo.haml" => "= partial 'bar'",
+        "presentation/foo.haml" => "= partial '_bar'",
         "presentation/_bar.haml" => "\n\n\n= yield",
       },
       expected_message: "Template called yield, but no nested content given",

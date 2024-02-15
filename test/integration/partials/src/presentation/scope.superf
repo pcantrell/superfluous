@@ -13,7 +13,7 @@ end
   %li c: #{c}
   %li d: #{d}
 
-= partial 'scope', a: 5, b: 6, c: 7 do
+= partial '_scope', a: 5, b: 6, c: 7 do
   %p In block in top script:
   %ul
     %li a: #{a}
