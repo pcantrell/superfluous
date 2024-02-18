@@ -38,9 +38,13 @@ module Superfluous
 
       @data_explorer = explorer
 
-      build_guarded
+      success = build_guarded
 
-      live_serve if live || explorer
+      if live || explorer
+        live_serve
+      else
+        exit(success ? 0 : 1)
+      end
     end
     
     def live_serve
@@ -99,10 +103,12 @@ module Superfluous
         else
           @project.build(**kwargs)
         end
+        return true
       rescue SystemExit, Interrupt
         raise
       rescue Exception => e
         log_failure(e)
+        return false
       ensure
         puts
       end
