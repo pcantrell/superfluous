@@ -20,3 +20,6 @@ end
     %li b: #{b}
     %li c: #{c}
     %li d: #{d}
+
+%p Using a distant item as a partial, located by ID:
+%blockquote= partial :item_with_an_id

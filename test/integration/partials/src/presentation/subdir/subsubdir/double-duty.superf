@@ -1,0 +1,9 @@
+––– script.rb –––
+
+def self.id
+  :item_with_an_id
+end
+
+––– template.md –––
+
+I am a standalone item _and_ a partial.

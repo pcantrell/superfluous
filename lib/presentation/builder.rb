@@ -247,12 +247,17 @@ module Superfluous
         end
       end
 
+      def find_item_by_id(id)
+        unless item = @items_by_id[id.to_sym]
+          raise "No item has the ID #{id.inspect}\nAvailable item IDs: #{@items_by_id.keys}"
+        end
+        return item
+      end
+
       def item_url_resolver
         lambda do |id, **props|
           id ||= props.keys.first
-          unless item = @items_by_id[id.to_sym]
-            raise "No item has the ID #{id.inspect}\nAvailable item IDs: #{@items_by_id.keys}"
-          end
+          item = find_item_by_id(id)
           path = "/" + item.output_path(props:).to_s
           @project_config.index_filenames.each do |index|
             path.sub! %r{/#{index}$}, "/"
@@ -265,18 +270,29 @@ module Superfluous
       end
 
       def render_partial(partial, from_item:, data:, **props, &nested_content)
+        partial_item = case partial
+          when String then find_partial_by_path(partial, from_item:)
+          when Symbol then find_item_by_id(partial)
+          else raise "Partials must be identified either by path (string) or by id (symbol);" +
+            " cannot use #{partial.class} as a partial identifier: #{partial.inspect}"
+        end
+
+        unless partial_item.singleton?
+          raise "Partial #{partial_item} cannot have {curly braces} in its filename"
+        end
+
+        result = nil
+        build_item(partial_item, data:, props:, nested_content:) do |context|
+          result = context.props
+        end
+        return result
+      end
+
+      def find_partial_by_path(partial, from_item:)
         partial_path = partial.to_s
         from_item.partial_search_paths.each do |search_path|
           if partial_item = @items_by_logical_path[search_path + partial_path]
-            unless partial_item.singleton?
-              raise "Partial #{partial_item} cannot have {curly braces} in its filename"
-            end
-
-            result = nil
-            build_item(partial_item, data:, props:, nested_content:) do |context|
-              result = context.props
-            end
-            return result
+            return partial_item
           end
         end
         searched_paths = from_item.partial_search_paths.map { |path| path + "#{partial_path}.*" }

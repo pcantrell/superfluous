@@ -225,12 +225,32 @@ class ErrorTest < SuperfluousTest
     )
   end
 
-  def test_missing_partial
+  def test_missing_partial_by_path
     build_and_check_error(
       files: {
         "presentation/a/b/c.haml" => "= partial '_florgblat'"
       },
       expected_message: "No template found for partial _florgblat (Searched for a/b/_florgblat.*, a/_florgblat.*, _florgblat.*)",
+      expected_in_backtrace: ["《src_dir》/presentation/a/b/c.haml:1:"]
+    )
+  end
+
+  def test_missing_partial_by_id
+    build_and_check_error(
+      files: {
+        "presentation/a/b/c.haml" => "= partial :florgblat"
+      },
+      expected_message: "No item has the ID :florgblat\nAvailable item IDs: []",
+      expected_in_backtrace: ["《src_dir》/presentation/a/b/c.haml:1:"]
+    )
+  end
+
+  def test_illegal_partial_locator
+    build_and_check_error(
+      files: {
+        "presentation/a/b/c.haml" => "= partial 37"
+      },
+      expected_message: "Partials must be identified either by path (string) or by id (symbol); cannot use Integer as a partial identifier: 37",
       expected_in_backtrace: ["《src_dir》/presentation/a/b/c.haml:1:"]
     )
   end

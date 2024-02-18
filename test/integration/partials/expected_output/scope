@@ -23,3 +23,7 @@
 </ul>
 
 <p>(End of partial)</p>
+<p>Using a distant item as a partial, located by ID:</p>
+<blockquote>
+<p>I am a standalone item <em>and</em> a partial.</p>
+</blockquote>
