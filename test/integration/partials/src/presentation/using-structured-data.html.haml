@@ -1,0 +1,4 @@
+%h1 Primes squared
+%ul
+  - partial("_structured_data_partial")[:primes].each do |prime|
+    %li= prime ** 2

@@ -13,6 +13,29 @@ module Superfluous
         end
       end
 
+      class Props < Hash
+        def initialize(item)
+          @item = item
+        end
+
+        def content
+          unless has_key?(:content)
+            raise "Pipeline did not produce a `content` prop for #{@item}. When an item has" +
+              " only a script and no template, the script must call `render(content: ...)`."
+          end
+          self[:content]
+        end
+
+        # Returns the content as an HTML-safe string. Often used implicitly when a template includes
+        # another item as a partial.
+        #
+        def to_s
+          content = self.content
+          content = content.read if content.is_a?(Pathname)  # TODO: add test
+          content.html_safe
+        end
+      end
+
       # Yields one or more pieces from the given source. If the source’s path has a `+kind.ext`
       # suffix, this method returns a single piece of that explicitly expressed kind (exactly as in
       # a .superf file). Otherwise, this method infers what kind(s) of piece(s) the source contains.

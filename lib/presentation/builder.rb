@@ -67,12 +67,7 @@ module Superfluous
               output_file_relative = item.output_path(props: context.props)
               log_output_file.call(output_file_relative)
 
-              unless content = context.props[:content]
-                raise "Pipeline did not produce a `content` prop for #{item}. When an item has" +
-                  " only a script and no template, the script must call `render(content: ...)`."
-              end
-
-              output(output_file_relative, content)
+              output(output_file_relative, context.props.content)
             end
           end
         end
@@ -197,7 +192,7 @@ module Superfluous
 
           pipeline.call(
             Renderer::RenderingContext.new(
-              props: { data: }.merge(props),
+              props: Renderer::Props.new(item).merge(data:).merge(props),
               scope: nil,  # each pipeline step will get its own scope object
               nested_content:
             )
@@ -279,9 +274,7 @@ module Superfluous
 
             result = nil
             build_item(partial_item, data:, props:, nested_content:) do |context|
-              content = context.props[:content]
-              content = content.read if content.is_a?(Pathname)  # TODO: add test
-              result = content.html_safe
+              result = context.props
             end
             return result
           end

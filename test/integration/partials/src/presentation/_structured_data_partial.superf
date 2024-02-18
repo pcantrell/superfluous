@@ -1,0 +1,5 @@
+––– script.rb –––
+
+def build
+  render(primes: [2, 3, 5])
+end
