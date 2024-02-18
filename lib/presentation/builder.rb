@@ -107,7 +107,7 @@ module Superfluous
           if existing == :append
             content = content.read
           else
-            File.symlink(content, output_file)  # TODO: allow config to disable this
+            File.symlink(content.realpath, output_file)  # TODO: allow config to disable this
             return
           end
         end
