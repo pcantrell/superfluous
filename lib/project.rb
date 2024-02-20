@@ -100,12 +100,12 @@ module Superfluous
 
     def with_project_load_path(&action)
       original_load_path = $LOAD_PATH.dup
-      $LOAD_PATH.unshift(lib_dir) if lib_dir.exist?
-
-      yield
-
-    ensure
-      $LOAD_PATH.replace(original_load_path)
+      begin
+        $LOAD_PATH.unshift(lib_dir) if lib_dir.exist?
+        yield
+      ensure
+        $LOAD_PATH.replace(original_load_path)
+      end
     end
   end
 end
