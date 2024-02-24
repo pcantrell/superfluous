@@ -9,7 +9,7 @@ module Superfluous
 
     # Recursively read and merge the entire contents of `dir` into a unified data tree.
     #
-    def self.read(dir, top_level: true, project_config:, ignore_filter:, logger:)
+    def self.read(dir, top_level: true, ignore:, logger:)
       raise "#{dir.to_s} is not a directory" unless dir.directory?
 
       data = Dict.new
@@ -18,13 +18,13 @@ module Superfluous
       dir.each_child do |child|
         logger.log child, temporary: !logger.verbose
 
-        next if ignore_filter.call(child)
+        next if ignore.call(child)
         next if child.basename.to_s.start_with?(/\.|_[^\.]/)  # skip dotfiles, _foo
 
         child_keys = child.basename.to_s.split('.')
 
         if child.directory?
-          new_data, sub_file_count = read(child, top_level: false, project_config:, logger:, ignore_filter:)
+          new_data, sub_file_count = read(child, top_level: false, logger:, ignore:)
           file_count += sub_file_count
         else
           new_data, ext_action = parse_file(child)
@@ -46,7 +46,7 @@ module Superfluous
         merge(data, new_data)
       end
 
-      data = apply_script_transform(dir, data)
+      data = apply_script_transform(dir, data, ignore:)
       data.superf_name = "data" if top_level && data.respond_to?(:superf_name=)
 
       [data, file_count]
@@ -109,8 +109,8 @@ module Superfluous
       end
     end
 
-    def self.apply_script_transform(dir, data)
-      Superfluous::read_dir_scripts(dir, parent_class: DataScriptBase).new
+    def self.apply_script_transform(dir, data, ignore:)
+      Superfluous::read_dir_scripts(dir, ignore:, parent_class: DataScriptBase).new
         .transform(data)  # TODO: But might scripts want to inherit from parents? That breaks this!
     end
 

@@ -10,11 +10,11 @@ module Superfluous
     # Retains compiled scripts and templates, so create a new instance to pick up changes.
     #
     class Builder
-      def initialize(presentation_dir:, project_config:, ignore_filter:, logger:)
+      def initialize(presentation_dir:, project_config:, ignore:, logger:)
         raise "#{presentation_dir.to_s} is not a directory" unless presentation_dir.directory?
 
         @presentation_dir = presentation_dir
-        @ignore_filter = ignore_filter
+        @ignore = ignore
         @logger = logger
         @project_config = project_config
 
@@ -135,7 +135,7 @@ module Superfluous
 
       def read_items(root_dir:, relative_subdir: Pathname(""), scope_parent_class:)
         scope_parent_class = Superfluous::read_dir_scripts(
-          root_dir + relative_subdir, parent_class: scope_parent_class)
+          root_dir + relative_subdir, ignore: @ignore, parent_class: scope_parent_class)
 
         (root_dir + relative_subdir).each_child(false) do |child|
           # Ignore dir script; we read it above
@@ -143,7 +143,7 @@ module Superfluous
 
           child_path = relative_subdir + child
           full_path = root_dir + child_path
-          next if @ignore_filter.call(full_path)
+          next if @ignore.call(full_path)
 
           if full_path.directory?
             read_items(root_dir:, relative_subdir: child_path, scope_parent_class:)

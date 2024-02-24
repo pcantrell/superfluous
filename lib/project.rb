@@ -15,8 +15,10 @@ module Superfluous
     pathname.basename.to_s =~ /^_.*\.rb$/
   end
 
-  def self.read_dir_scripts(dir, parent_class: Object)  # both data and presentation share this
-    dir_script_files = dir.children.filter { |f| is_dir_script?(f) }
+  def self.read_dir_scripts(dir, ignore:, parent_class: Object)  # both data and presentation share this
+    dir_script_files = dir.children
+      .filter { |f| is_dir_script?(f) }
+      .reject { |f| ignore.call(f) }
     if dir_script_files.any?
       return Class.new(parent_class) do |new_scope|
         dir_script_files.each do |script_file|  # TODO: possible to detect conflicting defs?
@@ -79,7 +81,7 @@ module Superfluous
             Presentation::Builder.new(
               presentation_dir: presentation_dir,
               project_config: @config,
-              ignore_filter:,
+              ignore: make_ignore_filter,
               logger: @logger,
             ).build_clean(
               data: @data,
@@ -95,8 +97,7 @@ module Superfluous
         @logger.log_timing("Reading data", "Read data") do
           data, file_count = Superfluous::Data.read(
             data_dir,
-            project_config: @config,
-            ignore_filter:,
+            ignore: make_ignore_filter,
             logger: @logger
           )
           @logger.log "Parsed #{file_count} data files"
@@ -115,7 +116,7 @@ module Superfluous
       end
     end
 
-    def ignore_filter
+    def make_ignore_filter
       gitignored = begin
         git_repo = Git.open(@project_dir).lib
         git_repo.ignored_files.map { |path| Pathname.new(git_repo.git_work_dir) + path }
