@@ -1,3 +1,4 @@
+require 'git'
 require_relative 'data/builder'
 require_relative 'presentation/builder'
 require_relative 'logging'
@@ -77,8 +78,9 @@ module Superfluous
           @logger.log_timing("Applying presentation", "Presentation applied") do
             Presentation::Builder.new(
               presentation_dir: presentation_dir,
+              project_config: @config,
+              ignore_filter:,
               logger: @logger,
-              project_config: @config
             ).build_clean(
               data: @data,
               output_dir: @output_dir
@@ -91,7 +93,12 @@ module Superfluous
     def read_data
       @data = if data_dir.exist?
         @logger.log_timing("Reading data", "Read data") do
-          data, file_count = Superfluous::Data.read(data_dir, logger: @logger)
+          data, file_count = Superfluous::Data.read(
+            data_dir,
+            project_config: @config,
+            ignore_filter:,
+            logger: @logger
+          )
           @logger.log "Parsed #{file_count} data files"
           data
         end
@@ -105,6 +112,22 @@ module Superfluous
         yield
       ensure
         $LOAD_PATH.replace(original_load_path)
+      end
+    end
+
+    def ignore_filter
+      gitignored = begin
+        git_repo = Git.open(@project_dir).lib
+        git_repo.ignored_files.map { |path| Pathname.new(git_repo.git_work_dir) + path }
+      rescue => e
+        unless e.message =~ /is not in a git working tree/  # matching on an error message; avert your eyes
+          puts "WARN: not using gitignore: #{e}"
+        end
+        []
+      end
+
+      lambda do |path|
+        gitignored.include?(path)
       end
     end
   end

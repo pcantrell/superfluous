@@ -1,0 +1,9 @@
+––– script.rb –––
+
+def build(data:)
+  render(content:
+    data.widgets.values.map do |widget|
+      "Widget named #{widget.name}"
+    end.join("\n")
+  )
+end

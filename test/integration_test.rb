@@ -22,7 +22,7 @@ private
   def run_data_test(data_dir, expected_data_file)
     return unless expected_data_file.exist?
 
-    data, file_count = Superfluous::Data.read(data_dir, logger:)
+    data, file_count = Superfluous::Data.read(data_dir, logger:, project_config: nil, ignore_filter: ->(f) { false })
 
     expected = expected_data_file.read
     actual = "#{file_count} files\n\n" + format_data(data)

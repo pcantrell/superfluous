@@ -1,1 +1,4 @@
 .sass-cache
+
+# used by ignored files integration test
+*ignoreme*
