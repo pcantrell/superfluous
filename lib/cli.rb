@@ -34,7 +34,9 @@ module Superfluous
       logger = Logger.new
       logger.verbose = verbose
 
-      @project = Project.new(project_dir:, logger:, output_dir: output)
+      opts = {}
+      opts[:output] = output if output
+      @project = Project.new(project_dir:, logger:, **opts)
 
       @data_explorer = explorer
 
