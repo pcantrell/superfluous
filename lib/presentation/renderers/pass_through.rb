@@ -19,7 +19,6 @@ module Superfluous
         end
 
         def render(context)
-          # TODO: support returning path for fast / symlinked asset copy
           yield(context.override_props(content: @content))
         end
       end
