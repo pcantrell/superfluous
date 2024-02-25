@@ -63,7 +63,7 @@ module Superfluous
         ignore_patterns: config[:ignore]
           .map do |pat|
             if pat.include?("/")
-              pat.remove_prefix("/").remove_suffix("/")
+              (project_dir + pat.delete_prefix("/").delete_suffix("/")).to_s
             else
               "**/" + pat
             end

@@ -1,3 +1,7 @@
 {
-  "ignore": ["*ignoreme*"]
+  "ignore": [
+    "*ignoreme*",
+    "src/presentation/foo/*daz*",
+    "**/glarg/**/*raz*"
+  ]
 }

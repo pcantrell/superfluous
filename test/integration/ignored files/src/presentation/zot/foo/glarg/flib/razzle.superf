@@ -1,0 +1,3 @@
+––– script.rb –––
+
+raise "Should be ignored"
