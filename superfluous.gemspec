@@ -19,7 +19,6 @@ Gem::Specification.new do |s|
   # Util
   s.add_runtime_dependency "activesupport", "~> 7.1"
   s.add_runtime_dependency "ansi", "~> 1.5"
-  s.add_runtime_dependency "git", "~> 1.19"
 
   # Server
   s.add_runtime_dependency "adsf", "~> 1.5"

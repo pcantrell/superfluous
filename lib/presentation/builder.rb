@@ -10,12 +10,11 @@ module Superfluous
     # Retains compiled scripts and templates, so create a new instance to pick up changes.
     #
     class Builder
-      def initialize(context:, ignore:)
+      def initialize(context:)
         unless context.presentation_dir.directory?
           raise "#{context.presentation_dir.to_s} is not a directory"
         end
-        @context = context
-        @ignore = ignore
+        @project_context = context
 
         @concise_ids = {}
 
@@ -45,7 +44,7 @@ module Superfluous
     private
 
       def logger
-        @context.logger
+        @project_context.logger
       end
 
       # Traverses and processes the presentation/ directory, raising an error if files exist in the
@@ -138,7 +137,7 @@ module Superfluous
 
       def read_items(root_dir:, relative_subdir: Pathname(""), scope_parent_class:)
         scope_parent_class = Superfluous::read_dir_scripts(
-          root_dir + relative_subdir, ignore: @ignore, parent_class: scope_parent_class)
+          root_dir + relative_subdir, context: @project_context, parent_class: scope_parent_class)
 
         (root_dir + relative_subdir).each_child(false) do |child|
           # Ignore dir script; we read it above
@@ -146,7 +145,7 @@ module Superfluous
 
           child_path = relative_subdir + child
           full_path = root_dir + child_path
-          next if @ignore.call(full_path)
+          next if @project_context.ignored?(full_path)
 
           if full_path.directory?
             read_items(root_dir:, relative_subdir: child_path, scope_parent_class:)
@@ -266,10 +265,10 @@ module Superfluous
           id ||= props.keys.first
           item = find_item_by_id(id)
           path = "/" + item.output_path(props:).to_s
-          @context.index_filenames.each do |index|
+          @project_context.index_filenames.each do |index|
             path.sub! %r{/#{index}$}, "/"
           end
-          @context.auto_extensions.each do |ext|
+          @project_context.auto_extensions.each do |ext|
             path.sub! %r{\.#{ext}$}, ""
           end
           path

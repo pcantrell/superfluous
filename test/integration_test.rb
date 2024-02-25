@@ -23,11 +23,17 @@ private
     return unless expected_data_file.exist?
 
     data, file_count = Superfluous::Data.read(
-      context: OpenStruct.new(data_dir:, logger:), ignore: ->(f) { false })
+      context: ProjectContextStub.new(data_dir:, logger:))
 
     expected = expected_data_file.read
     actual = "#{file_count} files\n\n" + format_data(data)
     assert_text_equal(expected, actual, "Data")
+  end
+
+  ProjectContextStub = ::Data.define(:data_dir, :logger) do
+    def ignored?(path)
+      false
+    end
   end
 
   # Converts data to a normalized string that (1) strips non-significant differences between test

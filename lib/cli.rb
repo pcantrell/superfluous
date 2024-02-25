@@ -126,13 +126,13 @@ module Superfluous
 
       puts ANSI.bold { ANSI.red { exception.message } }
 
-      full_src_dir = @project.src_dir.realpath.to_s + "/"
+      project_dir = @project.context.project_dir.realpath.to_s + "/"
       found_user_context = false
       exception.backtrace_locations.each do |location|
         path = (location.absolute_path || location.path)
-        if path.start_with?(full_src_dir)
-          context_path = full_src_dir
-          user_path = path.delete_prefix(full_src_dir)
+        if path.start_with?(project_dir)
+          context_path = project_dir
+          user_path = path.delete_prefix(project_dir)
           found_user_context = true
         elsif found_user_context
           next
