@@ -464,15 +464,18 @@ class ErrorTest < SuperfluousTest
   def build_and_check_error(files:, exception: Exception, expected_message:, expected_in_backtrace: [])
     src_dir = (@project_dir + "src").to_s
 
-    error = assert_raises(exception) { build_project(files) }
-    actual_message = error.message.gsub(src_dir, "《src_dir》")
+    actual_error = assert_raises(exception) { build_project(files) }
+    actual_message = actual_error.message.gsub(src_dir, "《src_dir》")
     unless actual_message.strip.start_with?(expected_message.strip)
-      fail "Mismatched message" +
+      exception = RuntimeError.new(
+        "Mismatched message" +
         "\n  Expected: #{expected_message.inspect}" +
-        "\n  Actual:   #{actual_message.inspect}"
+        "\n  Actual:   #{actual_message.inspect}")
+      exception.set_backtrace(actual_error.backtrace)
+      raise exception
     end
 
-    backtrace_remaining = error.backtrace.map do |line|
+    backtrace_remaining = actual_error.backtrace.map do |line|
       line.gsub(src_dir, "《src_dir》")
     end
     expected_in_backtrace.each do |expected_line|

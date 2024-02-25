@@ -10,19 +10,18 @@ module Superfluous
     # Retains compiled scripts and templates, so create a new instance to pick up changes.
     #
     class Builder
-      def initialize(presentation_dir:, project_config:, ignore:, logger:)
-        raise "#{presentation_dir.to_s} is not a directory" unless presentation_dir.directory?
-
-        @presentation_dir = presentation_dir
+      def initialize(context:, ignore:)
+        unless context.presentation_dir.directory?
+          raise "#{context.presentation_dir.to_s} is not a directory"
+        end
+        @context = context
         @ignore = ignore
-        @logger = logger
-        @project_config = project_config
 
         @concise_ids = {}
 
         @items_by_logical_path = {}  # logical path → Item
         @items_by_id = {}            # id symbol → Item
-        read_items(root_dir: presentation_dir, scope_parent_class: Renderer::RenderingScope)
+        read_items(root_dir: context.presentation_dir, scope_parent_class: Renderer::RenderingScope)
       end
 
       # Renders a new version of the output to a tmp dir, then quickly swaps out the out entire
@@ -44,6 +43,10 @@ module Superfluous
       end
 
     private
+
+      def logger
+        @context.logger
+      end
 
       # Traverses and processes the presentation/ directory, raising an error if files exist in the
       # output dir and leaving any extraneous / straggler files untouched.
@@ -224,29 +227,29 @@ module Superfluous
       # files collapsed when not in verbose mode.
       #
       def log_item_processing(item)
-        @logger.log item.logical_path, newline: false
+        logger.log item.logical_path, newline: false
         subsequent_line_prefix = nil
         output_count = 0
 
         yield(
           log_output_file: lambda do |output_file_relative|
-            if output_count == 0 || @logger.verbose
+            if output_count == 0 || logger.verbose
               if subsequent_line_prefix
-                @logger.log subsequent_line_prefix, newline: false
+                logger.log subsequent_line_prefix, newline: false
               else
                 subsequent_line_prefix = " " * item.logical_path.to_s.size
               end
             end
-            @logger.log " → #{output_file_relative}", temporary: !@logger.verbose
+            logger.log " → #{output_file_relative}", temporary: !logger.verbose
             output_count += 1
           end
         )
 
-        @logger.log "  ⚠️  no output", temporary: !@logger.verbose if output_count == 0
-        if !@logger.verbose
-          @logger.make_last_temporary_permanent
+        logger.log "  ⚠️  no output", temporary: !logger.verbose if output_count == 0
+        if !logger.verbose
+          logger.make_last_temporary_permanent
           if output_count > 1
-            @logger.log "#{subsequent_line_prefix} → …#{output_count - 1} more…"
+            logger.log "#{subsequent_line_prefix} → …#{output_count - 1} more…"
           end
         end
       end
@@ -263,10 +266,10 @@ module Superfluous
           id ||= props.keys.first
           item = find_item_by_id(id)
           path = "/" + item.output_path(props:).to_s
-          @project_config.index_filenames.each do |index|
+          @context.index_filenames.each do |index|
             path.sub! %r{/#{index}$}, "/"
           end
-          @project_config.auto_extensions.each do |ext|
+          @context.auto_extensions.each do |ext|
             path.sub! %r{\.#{ext}$}, ""
           end
           path

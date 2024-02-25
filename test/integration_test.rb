@@ -22,7 +22,8 @@ private
   def run_data_test(data_dir, expected_data_file)
     return unless expected_data_file.exist?
 
-    data, file_count = Superfluous::Data.read(data_dir, logger:, ignore: ->(f) { false })
+    data, file_count = Superfluous::Data.read(
+      context: OpenStruct.new(data_dir:, logger:), ignore: ->(f) { false })
 
     expected = expected_data_file.read
     actual = "#{file_count} files\n\n" + format_data(data)
@@ -66,7 +67,7 @@ private
     return unless expected_output.exist?
 
     Dir.mktmpdir do |actual_output|
-      @builder = Superfluous::Project.new(project_dir:, output_dir: actual_output, logger:).build
+      @builder = Superfluous::Project.new(project_dir:, output: actual_output, logger:).build
       assert_dirs_equal(expected_output, actual_output)
     end
   end

@@ -9,14 +9,14 @@ module Superfluous
 
     # Recursively read and merge the entire contents of `dir` into a unified data tree.
     #
-    def self.read(dir, top_level: true, ignore:, logger:)
+    def self.read(dir = nil, context:, ignore:, top_level: true)
+      dir ||= context.data_dir
       raise "#{dir.to_s} is not a directory" unless dir.directory?
 
       data = Dict.new
-
       file_count = 0
       dir.each_child do |child|
-        logger.log child, temporary: !logger.verbose
+        context.logger.log child, temporary: !context.logger.verbose
 
         next if ignore.call(child)
         next if child.basename.to_s.start_with?(/\.|_[^\.]/)  # skip dotfiles, _foo
@@ -24,7 +24,7 @@ module Superfluous
         child_keys = child.basename.to_s.split('.')
 
         if child.directory?
-          new_data, sub_file_count = read(child, top_level: false, logger:, ignore:)
+          new_data, sub_file_count = read(child, context:, ignore:, top_level: false)
           file_count += sub_file_count
         else
           new_data, ext_action = parse_file(child)
@@ -51,6 +51,8 @@ module Superfluous
 
       [data, file_count]
     end
+
+  private
 
     def self.parse_file(file)
       case file.extname

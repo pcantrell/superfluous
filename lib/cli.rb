@@ -53,8 +53,8 @@ module Superfluous
       require 'listen'
 
       # Changes to src/ cause rebuild
-      rebuild_on_change(@project.data_dir)
-      rebuild_on_change(@project.presentation_dir, use_existing_data: true)
+      rebuild_on_change(@project.context.data_dir)
+      rebuild_on_change(@project.context.presentation_dir, use_existing_data: true)
 
       # Changes to bundle or to Superfluous itself cause relaunch + rebuild (for development)
       relaunch_on_change("Superfluous gem", Pathname.new(__dir__).parent)
@@ -67,9 +67,9 @@ module Superfluous
         override_web_server_logging!
         server = Adsf::Server.new(
           live: true,
-          root: @project.output_dir,
-          index_filenames: @project.config.index_filenames,
-          auto_extensions: @project.config.auto_extensions,
+          root: @project.context.output_dir,
+          index_filenames: @project.context.index_filenames,
+          auto_extensions: @project.context.auto_extensions,
         )
         %w[INT TERM].each do |s|
           Signal.trap(s) { server.stop }
