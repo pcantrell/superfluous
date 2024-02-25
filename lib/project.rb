@@ -36,7 +36,7 @@ module Superfluous
     lib:          "src/lib",
     output:       "output",
 
-    ignore: ["*ignoreme*"],  # TODO: used by test; remove after adding per-project config
+    ignore: [],
     auto_extensions: %w[html],
     index_filenames: %w[index.html],
   }
@@ -47,7 +47,9 @@ module Superfluous
     def initialize(project_dir:, logger:, **config)
       project_dir = Pathname.new(project_dir)
 
-      config = DEFAULT_CONFIG.merge(config) # TODO: Add project-level config file
+      config = DEFAULT_CONFIG
+        .merge(read_project_config(project_dir))
+        .merge(config)
 
       @context = ProjectContext.new(
         project_dir:,
@@ -91,6 +93,15 @@ module Superfluous
     end
 
   private
+
+    def read_project_config(project_dir)
+      config_file = project_dir + "superfluous.json"
+      if config_file.exist?
+        JSON.parse(config_file.read, symbolize_names: true)
+      else
+        { }
+      end
+    end
 
     def read_data
       @data = if context.data_dir.exist?
