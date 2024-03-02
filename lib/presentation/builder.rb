@@ -127,7 +127,7 @@ module Superfluous
 
       def concise_id(*key)
         @concise_ids[key] ||=
-          "superf_" + SecureRandom.base64(9)
+          "sf" + SecureRandom.base64(6)
             .gsub("+", "-")
             .gsub("/", "_")
             .gsub("=", "")
