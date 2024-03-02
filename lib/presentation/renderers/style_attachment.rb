@@ -35,11 +35,11 @@ module Superfluous
           css = render_css_template(@source, ctx)
 
           if :css_nesting == isolation_mode
-            @content_wrapper = ["<span class=\"#{self_id}\">", "</span>"]
+            @content_wrapper = ["<div class=\"#{self_id}\">", "</div>"]
             css = render_css_template(
               @source.subsection(
                 ext: ".scss",  # Use scss to distribute wrapper class to all selectors
-                content: ".#{self_id} { #{css} }"),
+                content: ".#{self_id} { display: contents; #{css} }"),
               ctx
             )
           end

@@ -1,4 +1,6 @@
 /* subfolder/_css-nesting-partial */
 
-.【Superfluous::Presentation::Renderer::StyleAttachment|style|subfolder/_css-nesting-partial】 b {
-  border: 1px solid green; }
+.【Superfluous::Presentation::Renderer::StyleAttachment|style|subfolder/_css-nesting-partial】 {
+  display: contents; }
+  .【Superfluous::Presentation::Renderer::StyleAttachment|style|subfolder/_css-nesting-partial】 b {
+    border: 1px solid green; }
