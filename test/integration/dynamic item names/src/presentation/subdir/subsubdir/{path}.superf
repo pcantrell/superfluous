@@ -1,0 +1,6 @@
+––– script.rb –––
+
+def build
+  render(content: "relative path", path: "../foo/relative.txt")
+  render(content: "absolute path", path: "/bar/absolute.txt")
+end

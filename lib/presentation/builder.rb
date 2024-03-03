@@ -88,18 +88,22 @@ module Superfluous
         @after_build_actions << action
       end
 
-      def output(relative_path, content, existing: :error)
+      def output(output_path, content, existing: :error)
         unless %i[append error].include?(existing)
           raise "Illegal value for `existing` param: #{existing.inspect}"
         end
 
-        output_file = (@output_dir + relative_path).cleanpath
+        if output_path.absolute?  # interpret absolute paths as site-relative, not FS-root-relative
+          output_path = output_path.strip_leading_slash
+        end
+        output_file = (@output_dir + output_path).cleanpath
         unless @output_dir.contains?(output_file)
           raise "Item produced a dynamic output path that lands outsite the output folder" +
-            "\n  relative output path: #{relative_path}" +
+            "\n  relative output path: #{output_path}" +
             "\n           resolved to: #{output_file}" +
             "\n   which is outside of: #{@output_dir}"
         end
+
         output_file.parent.mkpath
 
         if existing == :error && output_file.exist?
