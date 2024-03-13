@@ -44,7 +44,7 @@ module Superfluous
   class Project
     attr_reader :project_dir, :data, :context
 
-    def initialize(project_dir:, logger:, **config)
+    def initialize(project_dir:, logger: Logger.new, **config)
       project_dir = Pathname.new(project_dir).realpath
 
       config = DEFAULT_CONFIG
