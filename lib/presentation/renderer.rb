@@ -31,7 +31,7 @@ module Superfluous
         #
         def to_s
           content = self.content
-          content = content.read if content.is_a?(Pathname)  # TODO: add test
+          content = content.read if content.is_a?(Pathname)
           content.html_safe
         end
       end
