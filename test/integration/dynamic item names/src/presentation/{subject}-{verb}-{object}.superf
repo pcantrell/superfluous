@@ -1,0 +1,6 @@
+––– script.rb –––
+
+def build
+    render(subject: "dog", object: "man", verb: "bites", content: "ordinary")
+    render(object: "dog", subject: "man", verb: "bites", content: "news")
+end

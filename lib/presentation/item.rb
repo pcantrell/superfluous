@@ -141,7 +141,7 @@ module Superfluous
     private
 
       PARTIAL_PATTERN = /^_/
-      PROP_PATTERN = /\{(.*)\}/
+      PROP_PATTERN = /\{(.*?)\}/
     end
 
     Piece = ::Data.define(:kind, :source, :renderer)
