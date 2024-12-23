@@ -9,6 +9,7 @@ Gem::Specification.new do |s|
   s.homepage    = 'https://github.com/pcantrell/superfluous'
   s.metadata    = { "source_code_uri" => "https://github.com/pcantrell/superfluous" }
   s.license     = 'MIT'
+  s.executables << 'superfluous'
 
   # Data parsing
   s.add_runtime_dependency "kramdown", "~> 2.4"
