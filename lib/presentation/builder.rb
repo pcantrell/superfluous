@@ -154,7 +154,12 @@ module Superfluous
           if full_path.directory?
             read_items(root_dir:, relative_subdir: child_path, scope_parent_class:)
           else
-            source = Source.new(root_dir:, relative_path: child_path, whole_file: true)
+            source = Source.new(
+              root_dir:,
+              relative_path: child_path,
+              whole_file: true,
+              renderer_opts: @project_context.renderer_opts
+            )
             Renderer.each_piece(source) do |logical_path:, piece:|
               item = @items_by_logical_path[logical_path] ||=
                 Item.new(logical_path, Class.new(scope_parent_class))

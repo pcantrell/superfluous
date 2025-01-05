@@ -1,0 +1,4 @@
+––– template.erb –––
+foo
+<% "config says not to trim space here" %>
+bar

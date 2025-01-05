@@ -4,7 +4,7 @@ module Superfluous
     # A source of presentation content, either a whole file or a part of one
     #
     class Source
-      def initialize(root_dir:, relative_path:, ext: nil, line_num: 1, whole_file:, content: nil)
+      def initialize(root_dir:, relative_path:, ext: nil, line_num: 1, whole_file:, content: nil, renderer_opts:)
         @root_dir = root_dir
         @relative_path = relative_path
         @line_num = line_num
@@ -12,9 +12,10 @@ module Superfluous
         @content = content
         @ext = ext || relative_path.extname
         @full_path = (root_dir + relative_path).realpath
+        @renderer_opts = renderer_opts
       end
 
-      attr_reader :full_path, :root_dir, :relative_path, :line_num, :ext
+      attr_reader :full_path, :root_dir, :relative_path, :line_num, :ext, :renderer_opts
       attr_reader :id  # for references from other items
 
       def content
@@ -31,7 +32,7 @@ module Superfluous
 
       def subsection(ext:, line_num: nil, content: nil)
         line_num ||= self.line_num
-        self.class.new(root_dir:, relative_path:, ext:, line_num:, content:, whole_file: false)
+        self.class.new(ext:, line_num:, content:, whole_file: false, root_dir:, relative_path:, renderer_opts:)
       end
 
       def to_s

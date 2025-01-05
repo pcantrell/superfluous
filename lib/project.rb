@@ -18,6 +18,8 @@ module Superfluous
     :output_dir,
 
     :ignore_patterns,
+    :renderer_opts,
+
     :auto_extensions,
     :index_filenames,
 
@@ -37,6 +39,8 @@ module Superfluous
     output:       "output",
 
     ignore: [],
+    renderer_opts: {},
+
     auto_extensions: %w[html],
     index_filenames: %w[index.html],
   }
@@ -57,6 +61,7 @@ module Superfluous
         presentation_dir: project_dir + config[:presentation],
         lib_dir:          project_dir + config[:lib],
         output_dir:       project_dir + config[:output],
+        renderer_opts:    config[:renderer_opts],
         auto_extensions:  Array(config[:auto_extensions]),
         index_filenames:  Array(config[:index_filenames]),
 

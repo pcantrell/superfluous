@@ -18,10 +18,12 @@ module Superfluous
           return unless kind == :template
           return unless template_class = Tilt.template_for(source.ext)
 
+          opts = source.renderer_opts[source.ext.to_sym] || {}
+
           # TODO: fix possible symlink issue on next line (should context be source or target dir?)
           Dir.chdir(source.full_path.parent) do  # for relative includes (e.g. sass) embedded in template
             self.new(
-              template_class.new(source.full_path, source.line_num) do
+              template_class.new(source.full_path, source.line_num, **opts) do
                 source.content
               end
             )

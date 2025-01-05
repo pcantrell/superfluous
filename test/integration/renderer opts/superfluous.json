@@ -1,0 +1,10 @@
+{
+  "renderer_opts": {
+    ".erb": {
+      "trim": false
+    },
+    ".haml": {
+      "attr_quote": "!custom!"
+    }
+  }
+}
