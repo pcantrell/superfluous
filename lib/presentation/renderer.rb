@@ -87,7 +87,7 @@ module Superfluous
 
       class Base
         # Attempts to use this renderer to interpret the given source as a piece of the given kind.
-        # Either yields one piece and returns :success, or return :unrecognized (does not raise).
+        # Either yields one piece and returns :success, or returns :unrecognized (does not raise).
         #
         # This default implementation delegates to a renderer_for method in the subclass.
         #
