@@ -457,7 +457,17 @@ class ErrorTest < SuperfluousTest
         "data/foo.json" => '{ "bar": { "baz": 17 } }',
         "data/foo/bar.json" => '{ "baz": 7 }',
       },
-      expected_message: "Cannot merge data for baz:\n  value 1: 17 \n  value 2: 7"
+      expected_message: "Cannot merge Integer into Integer\n  at baz\n  at bar\n  at foo\n  in 《src_dir》/data/foo"
+    )
+  end
+
+  def test_data_conflict_at_file_root
+    build_and_check_error(
+      files: {
+        "data/foo.json" => '{ }',
+        "data/foo/_.json" => '[ ]',
+      },
+      expected_message: "Cannot merge Superfluous::Data::Array into Superfluous::Data::Dict\n  in 《src_dir》/data/foo"
     )
   end
 

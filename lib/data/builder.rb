@@ -43,7 +43,11 @@ module Superfluous
           end
         )
 
-        merge(data, new_data)
+        begin
+          merge(data, new_data)
+        rescue => e
+          raise e, e.message + "\n  in #{child}"
+        end
       end
 
       data = apply_script_transform(dir, data, context:)
@@ -94,18 +98,20 @@ module Superfluous
 
       return if key == :id && existing_data == new_data
 
-      unless existing_data.is_a?(Dict) && new_data.is_a?(Dict)
-        raise "Cannot merge data for #{key}:" +
-          "\n  value 1: #{existing_data.inspect} " +
-          "\n  value 2: #{new_data.inspect}"
+      begin
+        merge(existing_data, new_data)
+      rescue => e
+        raise e, e.message + "\n  at #{key}"
       end
-
-      merge(existing_data, new_data)
     end
 
     # Recursively merge two data trees, modifying `existing_data` in place.
     #
     def self.merge(existing_data, new_data)
+      unless existing_data.is_a?(Dict) && new_data.is_a?(Dict)
+        raise "Cannot merge #{new_data.class} into #{existing_data.class}"
+      end
+
       new_data.each_pair do |child_key, child_value|
         merge_child(existing_data, child_key, child_value)
       end
