@@ -1,0 +1,11 @@
+––– script.rb –––
+
+def build
+  (2..3).each do |parent|
+    render(parent:)
+  end
+end
+
+––– template.erb –––
+
+Directory for <%= parent %>

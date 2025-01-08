@@ -47,7 +47,7 @@ module Superfluous
         @logical_path = logical_path
         @scope_class = scope_class
         @pieces_by_kind = {}
-        @singleton = @logical_path.basename.to_s !~ PROP_PATTERN
+        @singleton = logical_path.each_filename.all? { |part| part !~ PROP_PATTERN }
         @partial = logical_path.each_filename.any? { |part| part =~ PARTIAL_PATTERN }
       end
 
@@ -89,8 +89,8 @@ module Superfluous
       end
 
       def output_path(props:)
-        logical_path.parent + logical_path.basename.to_s.gsub(PROP_PATTERN) do
-          prop_spec = $1
+        logical_path.gsub_in_components(PROP_PATTERN) do |match|
+          prop_spec = match[1]
           key_chain = [:props]
           target = props
 

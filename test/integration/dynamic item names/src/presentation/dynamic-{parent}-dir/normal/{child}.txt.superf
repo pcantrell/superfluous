@@ -1,0 +1,13 @@
+––– script.rb –––
+
+def build
+  (0..2).each do |parent|
+    (4..(4 + parent)).each do |child|
+      render(parent:, child:)
+    end
+  end
+end
+
+––– template.erb –––
+
+I am child <%= child %> of <%= parent %>.

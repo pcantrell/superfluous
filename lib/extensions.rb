@@ -18,6 +18,17 @@ class Pathname
       self
     end
   end
+
+  def gsub_in_components(*args, &block)
+    if root? || parent.each_filename.first == ".."  # Recursion needs to stop for "/", "foo/bar", and "../foo"
+      self
+    else
+      parent.gsub_in_components(*args, &block) +
+        basename.to_s.gsub(*args) do
+          yield Regexp.last_match
+        end
+    end
+  end
 end
 
 class StringScanner
