@@ -24,4 +24,5 @@ Gem::Specification.new do |s|
   # Server
   s.add_runtime_dependency "adsf", "~> 1.5"
   s.add_runtime_dependency "adsf-live", "~> 1.5"
+  s.add_runtime_dependency "puma", "~> 6.5.0"
 end

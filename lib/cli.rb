@@ -227,9 +227,6 @@ module Superfluous
     # Turn back! Only horrifying monkey patches lie beyond this point.
 
     def override_web_server_logging!
-      # Disable WEBrick’s logging completely; only use Rack logs
-      WEBrick::Config::HTTP[:AccessLog] = []
-
       # Wrap Rack’s logging with our colorizer
       ::Rack::CommonLogger.prepend(RackLogOverride)
 
