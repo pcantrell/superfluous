@@ -99,10 +99,12 @@ module Superfluous
 
     def read_data
       @data = if context.data_dir.exist?
-        context.logger.log_timing("Reading data", "Read data") do
-          data, file_count = Superfluous::Data.read(context:)
-          context.logger.log "Parsed #{file_count} data files"
-          data
+        with_project_load_path do
+          context.logger.log_timing("Reading data", "Read data") do
+            data, file_count = Superfluous::Data.read(context:)
+            context.logger.log "Parsed #{file_count} data files"
+            data
+          end
         end
       end
     end
