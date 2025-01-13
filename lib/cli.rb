@@ -67,16 +67,16 @@ module Superfluous
         run_data_explorer
       else
         override_web_server_logging!
-        server = Adsf::Server.new(
-          live: true,
+        @server = Adsf::Server.new(
+          live: :manual,
           root: @project.context.output_dir,
           index_filenames: @project.context.index_filenames,
           auto_extensions: @project.context.auto_extensions,
         )
         %w[INT TERM].each do |s|
-          Signal.trap(s) { server.stop }
+          Signal.trap(s) { @server.stop }
         end
-        server.run
+        @server.run
       end
     end
 
@@ -104,6 +104,7 @@ module Superfluous
           end
         else
           @project.build(**kwargs)
+          @server&.live_reload
         end
         return true
       rescue SystemExit, Interrupt

@@ -1,3 +1,17 @@
+GIT
+  remote: https://github.com/pcantrell/adsf
+  revision: a6d78b252d8c3a48779a864c022cc616eea3674a
+  branch: manual-reload
+  specs:
+    adsf (1.5.2)
+      rack (>= 1.0.0, < 4.0.0)
+      rackup (~> 2.1)
+    adsf-live (1.5.2)
+      adsf (~> 1.3)
+      em-websocket (~> 0.5)
+      eventmachine (~> 1.2)
+      listen (~> 3.0)
+
 PATH
   remote: .
   specs:
@@ -23,15 +37,6 @@ GEM
       minitest (>= 5.1)
       mutex_m
       tzinfo (~> 2.0)
-    adsf (1.5.0)
-      rack (>= 1.0.0, < 4.0.0)
-      rackup (~> 2.1)
-    adsf-live (1.5.0)
-      adsf (~> 1.3)
-      em-websocket (~> 0.5)
-      eventmachine (~> 1.2)
-      listen (~> 3.0)
-      rack-livereload (~> 0.3)
     ansi (1.5.0)
     base64 (0.2.0)
     bigdecimal (3.1.5)
@@ -95,8 +100,6 @@ GEM
     puma (6.5.0)
       nio4r (~> 2.0)
     rack (3.0.8)
-    rack-livereload (0.5.1)
-      rack
     rackup (2.1.0)
       rack (>= 3)
       webrick (~> 1.8)
@@ -121,6 +124,8 @@ PLATFORMS
   arm64-darwin-23
 
 DEPENDENCIES
+  adsf!
+  adsf-live!
   diffy (~> 3.4)
   guard (~> 2.18)
   guard-minitest (~> 2.4)

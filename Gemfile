@@ -19,3 +19,8 @@ group :development do
   gem "pry", "~> 0.14.2"
   gem "rake", "~> 13.1"
 end
+
+# Clients will need this unless / until adsf merges manual reload PR:
+# https://github.com/denisdefreyne/adsf/pull/42
+gem "adsf", git: "https://github.com/pcantrell/adsf", branch: "manual-reload"
+gem "adsf-live", git: "https://github.com/pcantrell/adsf", branch: "manual-reload"
