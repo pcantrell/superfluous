@@ -1,5 +1,7 @@
-require 'tilt'
 require 'active_support/all'
+require 'base64'
+require 'digest'
+require 'tilt'
 require 'tmpdir'
 require_relative 'renderer'
 require_relative '../extensions'
@@ -130,11 +132,11 @@ module Superfluous
       end
 
       def concise_id(*key)
-        @concise_ids[key] ||=
-          "sf" + SecureRandom.base64(6)
-            .gsub("+", "-")
-            .gsub("/", "_")
-            .gsub("=", "")
+        @concise_ids[key] ||= begin
+          key_str = key.map(&:to_s).join(":")
+          hash = Base64.urlsafe_encode64(Digest::SHA2.digest(key_str))
+          "sf" + hash[0...8]
+        end
       end
 
     private
