@@ -122,44 +122,14 @@ module Superfluous
         .transform(data)  # TODO: But might scripts want to inherit from parents? That breaks this!
     end
 
-    module DataWrapping
-      # Recursively wrap eligible types (hashes and arrays) as Superfluous TreeNodes, leaving other
-      # objects untouched. Sets id, index, and parent properties as appropriate.
-      #
-      def wrap(data, id: nil, index: nil, parent: nil)
-        case data
-          when TreeNode
-            data
-          when Hash
-            result = Dict.new
-            result.attach!(parent:, id:, index:)
-            data.each do |key, value|
-              result[key] = wrap(value, id: key, parent: result)
-            end
-            result
-          when ::Array
-            result = Array.new
-            result.concat(
-              data.map.with_index do |elem, index|
-                wrap(elem, index:, parent: result)
-              end
-            )
-            result.attach!(parent:, id:, index:)
-            result
-          else
-            data
-        end
-      end
-    end
-
-    extend DataWrapping
+    extend Wrapping
 
     class DataScriptBase
       def transform(data)
         data
       end
 
-      include DataWrapping
+      include Wrapping
     end
   end
 end
