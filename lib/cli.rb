@@ -14,6 +14,8 @@ module Superfluous
         parser.on("-d", "--data-explorer", "Open an interactive console for exploring data")
         parser.on("-o", "--output DIR", "Put build results in the given directory",
           "WARNING: Deletes all existing contents of the given directory")
+        parser.on(nil, "--allow-remote", "Allow connections from other devices on network",
+          "(Default is localhost only)")
       end
 
       opts = {}
@@ -34,7 +36,7 @@ module Superfluous
 
     def initialize(
       project_dir:,
-      output: nil, live: false, verbose: false, data_explorer: false
+      output: nil, live: false, verbose: false, data_explorer: false, allow_remote: false
     )
       logger = Logger.new
       logger.verbose = verbose
@@ -44,6 +46,8 @@ module Superfluous
       @project = Project.new(project_dir:, logger:, **opts)
 
       @data_explorer = data_explorer
+
+      @allow_remote = allow_remote
 
       success = build_guarded
 
@@ -77,6 +81,7 @@ module Superfluous
           root: @project.context.output_dir,
           index_filenames: @project.context.index_filenames,
           auto_extensions: @project.context.auto_extensions,
+          host: (@allow_remote ? "::" : "localhost"),
         )
         %w[INT TERM].each do |s|
           Signal.trap(s) { @server.stop }
