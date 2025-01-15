@@ -11,7 +11,7 @@ module Superfluous
         parser.banner = "Usage: superfluous <project-dir> [options]"
         parser.on("-l", "--live", "Start a local web server with live updates on rebuild")
         parser.on("-v", "--verbose", "Show more details during build")
-        parser.on("-e", "--explorer", "Open an interactive console for exploring data")
+        parser.on("-d", "--data-explorer", "Open an interactive console for exploring data")
         parser.on("-o", "--output DIR", "Put build results in the given directory",
           "WARNING: Deletes all existing contents of the given directory")
       end
@@ -27,10 +27,15 @@ module Superfluous
         exit 1
       end
 
+      opts.transform_keys! { |k| k.to_s.gsub('-', '_').to_sym }  # CLI opts → Ruby kwargs
+
       Superfluous::CLI.new(project_dir: args[0], **opts)
     end
 
-    def initialize(project_dir:, output: nil, live: false, verbose: false, explorer: false)
+    def initialize(
+      project_dir:,
+      output: nil, live: false, verbose: false, data_explorer: false
+    )
       logger = Logger.new
       logger.verbose = verbose
 
@@ -38,11 +43,11 @@ module Superfluous
       opts[:output] = output if output
       @project = Project.new(project_dir:, logger:, **opts)
 
-      @data_explorer = explorer
+      @data_explorer = data_explorer
 
       success = build_guarded
 
-      if live || explorer
+      if live || data_explorer
         live_serve
       else
         exit(success ? 0 : 1)
