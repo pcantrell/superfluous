@@ -294,10 +294,6 @@ module Superfluous
             " cannot use #{partial.class} as a partial identifier: #{partial.inspect}"
         end
 
-        unless partial_item.singleton?
-          raise "Partial #{partial_item} cannot have {curly braces} in its filename"
-        end
-
         result = nil
         build_item(partial_item, data:, props:, nested_content:) do |context|
           result = context.props

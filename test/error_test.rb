@@ -255,17 +255,6 @@ class ErrorTest < SuperfluousTest
     )
   end
 
-  def test_partial_with_props
-    build_and_check_error(
-      files: {
-        "presentation/main.haml" => "= partial '_helper{oops}'",
-        "presentation/_helper{oops}.haml" => "%b oops"
-      },
-      expected_message: "Partial ❰_helper{oops}❱ cannot have {curly braces} in its filename",
-      expected_in_backtrace: ["《src_dir》/presentation/main.haml:1:"]
-    )
-  end
-
   def test_unknown_piece
     build_and_check_error(
       files: {
