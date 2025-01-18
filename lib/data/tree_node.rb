@@ -100,7 +100,21 @@ module Superfluous
       end
 
       def [](*keys)
-        return @table[keys[0].to_sym] if keys.size == 1
+        if keys.size == 1
+          key = keys[0]
+          if key.is_a?(Hash)
+            required_key = key[:required]
+            result = self[required_key]
+            if result.nil?
+              raise "Missing required key #{required_key.inspect} at #{superf_data_path}"
+            end
+            return result
+          elsif key.respond_to?(:to_sym)
+            return @table[key.to_sym]
+          else
+            raise "malformed lookup key: #{key}"
+          end
+        end
 
         val = self
         keys.each do |key|

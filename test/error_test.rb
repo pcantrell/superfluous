@@ -460,6 +460,23 @@ class ErrorTest < SuperfluousTest
     )
   end
 
+  def test_missing_required_data
+    build_and_check_error(
+      files: {
+        "data/foo.json" => '{ "bar": 1 }',
+        "presentation/bar.superf" => <<~EOF
+          ––– script.rb –––
+          def build(data:)
+            data.foo[required: "bar"]
+            data.foo[required: "baz"]
+          end
+          ––– template.haml –––
+        EOF
+      },
+      expected_message: "Missing required key \"baz\" at data.foo"
+    )
+  end
+
   def build_and_check_error(files:, exception: Exception, expected_message:, expected_in_backtrace: [])
     src_dir = (@project_dir + "src").to_s
 
