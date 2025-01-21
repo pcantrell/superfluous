@@ -41,7 +41,7 @@ module Superfluous
             end
             context.nested_content.call.html_safe
           end
-          yield(context.with(props: context.props.merge(content:)))
+          yield(context.override_props(content:))
         end
       end
 
