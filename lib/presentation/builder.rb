@@ -4,6 +4,7 @@ require 'digest'
 require 'tilt'
 require 'tmpdir'
 require_relative 'renderer'
+require_relative '../cache'
 require_relative '../extensions'
 
 module Superfluous
@@ -190,6 +191,8 @@ module Superfluous
             render_partial(partial, from_item: item, data:, **props, &block)
           end
 
+          cache = Cache.new(@project_context)
+
           final_step_with_count = lambda do |*args|
             count_output.call
             final_step.call(*args)
@@ -202,7 +205,8 @@ module Superfluous
               end
 
               new_context = context.with(
-                scope: item.scope_class.new(renderer:, partial_renderer:, item_url_resolver:))
+                scope: item.scope_class.new(
+                  renderer:, partial_renderer:, cache:, item_url_resolver:))
               piece.renderer.render(new_context, &next_step)
             end
           end

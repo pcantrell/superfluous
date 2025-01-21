@@ -125,10 +125,11 @@ module Superfluous
       # - any custom methods defined by the script.
       #
       class RenderingScope
-        def initialize(renderer:, partial_renderer:, item_url_resolver:)
+        def initialize(renderer:, partial_renderer:, cache:, item_url_resolver:)
           @renderer = renderer
           @partial_renderer = partial_renderer
           @item_url_resolver = item_url_resolver
+          @cache = cache
         end
 
         def build
@@ -145,6 +146,10 @@ module Superfluous
 
         def url(id = nil, **props)
           @item_url_resolver.call(id, **props)
+        end
+
+        def cached_file(**opts, &block)
+          @cache.get(**opts, &block)
         end
 
         def self.id

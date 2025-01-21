@@ -15,6 +15,7 @@ module Superfluous
     :data_dir,
     :presentation_dir,
     :lib_dir,
+    :cache_dir,
     :output_dir,
 
     :ignore_patterns,
@@ -36,6 +37,7 @@ module Superfluous
     data:         "src/data",
     presentation: "src/presentation",
     lib:          "src/lib",
+    cache:        "cache",
     output:       "output",
 
     ignore: [],
@@ -60,6 +62,7 @@ module Superfluous
         data_dir:         project_dir + config[:data],
         presentation_dir: project_dir + config[:presentation],
         lib_dir:          project_dir + config[:lib],
+        cache_dir:        project_dir + config[:cache],
         output_dir:       project_dir + config[:output],
         renderer_opts:    config[:renderer_opts],
         auto_extensions:  Array(config[:auto_extensions]),
