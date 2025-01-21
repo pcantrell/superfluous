@@ -1,0 +1,17 @@
+––– script.rb –––
+
+def build(data:)
+  data.fish.each do |fish|
+    fish_content = cached_content(key: ["fish content!", fish]) do
+      fish.gsub(" ", "-")
+    end
+
+    render(
+      fish:,
+      id: fish_content,
+      content: cached_file(key: ["fish file!", fish]) do |outfile|
+        File.write(outfile, "Sighted: #{fish}")
+      end,
+    )
+  end
+end

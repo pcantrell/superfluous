@@ -72,8 +72,22 @@ private
   def run_output_test(project_dir, expected_output)
     return unless expected_output.exist?
 
-    Dir.mktmpdir do |actual_output|
-      @builder = Superfluous::Project.new(project_dir:, output: actual_output, logger:).build
+    Dir.mktmpdir do |tmp_dir|
+      tmp_dir = Pathname.new(tmp_dir)
+      
+      actual_output = tmp_dir + "output"
+      actual_output.mkdir
+
+      test_cache_dir = project_dir + "cache"
+      tmp_cache_dir = tmp_dir + "cache"
+      if test_cache_dir.exist?
+        # We don’t want to write to the actual test dir
+        FileUtils.cp_r(test_cache_dir, tmp_cache_dir)
+      end
+
+      @builder = Superfluous::Project.new(
+        project_dir:, cache: tmp_cache_dir, output: actual_output, logger:
+      ).build
       assert_dirs_equal(expected_output, actual_output)
     end
   end
