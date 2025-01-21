@@ -206,7 +206,7 @@ module Superfluous
 
               new_context = context.with(
                 scope: item.scope_class.new(
-                  renderer:, partial_renderer:, cache:, item_url_resolver:))
+                  renderer:, partial_renderer:, cache:, item_url_resolver:, logger:))
               piece.renderer.render(new_context, &next_step)
             end
           end

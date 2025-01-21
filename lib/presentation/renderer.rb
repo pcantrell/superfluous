@@ -125,12 +125,15 @@ module Superfluous
       # - any custom methods defined by the script.
       #
       class RenderingScope
-        def initialize(renderer:, partial_renderer:, cache:, item_url_resolver:)
+        def initialize(renderer:, partial_renderer:, cache:, item_url_resolver:, logger:)
           @renderer = renderer
           @partial_renderer = partial_renderer
-          @item_url_resolver = item_url_resolver
           @cache = cache
+          @item_url_resolver = item_url_resolver
+          @logger = logger
         end
+
+        attr_reader :logger
 
         def build
           render
