@@ -1,5 +1,6 @@
 require 'strscan'
 require_relative 'item'
+require_relative '../cache'
 
 module Superfluous
   module Presentation
@@ -151,21 +152,11 @@ module Superfluous
           @item_url_resolver.call(id, **props)
         end
 
-        def cached_file(**opts, &block)
-          @cache.get(**opts, &block)
-        end
-        
-        def cached_content(**opts, &block)
-          File.read(
-            @cache.get(**opts) do |outfile|
-              File.write(outfile, block.call)
-            end
-          )
-        end
-
         def self.id
           nil
         end
+
+        include CacheAccess
       end
 
     protected

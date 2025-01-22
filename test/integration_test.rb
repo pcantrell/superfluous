@@ -34,6 +34,10 @@ private
     def ignored?(path)
       false
     end
+
+    def cache_dir
+      nil
+    end
   end
 
   # Converts data to a normalized string that (1) strips non-significant differences between test

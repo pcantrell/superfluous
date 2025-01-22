@@ -1,8 +1,8 @@
 def transform(data)
   data.fish = data.fish_type.map do |fish_type|
-    # cache("fish", fish_type:) do
+    result = cached_content(key: [fish_type]) do
       "#{fish_type} fish"
-    # end
+    end.strip   # because test file ends with newline
   end
 
   data

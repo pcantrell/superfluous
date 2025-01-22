@@ -1,8 +1,9 @@
-require_relative 'tree_node'
 require 'ostruct'
 require 'json'
 require 'yaml'
 require 'kramdown'
+require_relative 'tree_node'
+require_relative '../cache'
 
 module Superfluous
   module Data
@@ -12,6 +13,9 @@ module Superfluous
     def self.read(dir = nil, context:, top_level: true)
       dir ||= context.data_dir
       raise "#{dir.to_s} is not a directory" unless dir.directory?
+
+      @cache = Cache.new(context)
+      @logger = context.logger
 
       data = Dict.new
       file_count = 0
@@ -118,18 +122,27 @@ module Superfluous
     end
 
     def self.apply_script_transform(dir, data, context:)
-      Superfluous::read_dir_scripts(dir, context:, parent_class: DataScriptBase).new
+      Superfluous::read_dir_scripts(dir, context:, parent_class: DataScriptBase)
+        .new(cache: @cache, logger: @logger)
         .transform(data)  # TODO: But might scripts want to inherit from parents? That breaks this!
     end
 
     extend Wrapping
 
     class DataScriptBase
+      def initialize(cache:, logger:)
+        @cache = cache
+        @logger = logger
+      end
+
+      attr_reader :logger
+
       def transform(data)
         data
       end
 
       include Wrapping
+      include CacheAccess
     end
   end
 end
