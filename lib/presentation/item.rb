@@ -89,7 +89,12 @@ module Superfluous
       end
 
       def output_path(props:)
-        logical_path.gsub_in_components(PROP_PATTERN) do |match|
+        # Pathname splitting is surprisingly performance-intensive; cache it!
+        @path_components ||= logical_path.components
+
+        new_components = @path_components.map do |component|
+         component.gsub(PROP_PATTERN) do
+           match = Regexp.last_match
           prop_spec = match[1]
           key_chain = [:props]
           target = props
@@ -123,7 +128,10 @@ module Superfluous
             key_chain << key
           end
           target
+         end
         end
+
+        Pathname.from_components(new_components)
       end
 
       def logical_relative(path)

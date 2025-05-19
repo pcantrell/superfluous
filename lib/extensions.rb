@@ -19,6 +19,17 @@ class Pathname
     end
   end
 
+  def components
+    ascend
+      .map { |ancestor| ancestor.basename.to_s }
+      .reverse
+  end
+
+  def self.from_components(components)
+    last_absolute = components.rindex { |s| s.start_with?("/") } || 0
+    self.new(components[last_absolute...].join("/"))
+  end
+
   def gsub_in_components(*args, &block)
     if root? || parent.each_filename.first == ".."  # Recursion needs to stop for "/", "foo/bar", and "../foo"
       self
