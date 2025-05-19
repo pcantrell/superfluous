@@ -82,6 +82,8 @@ module Superfluous
     end
 
     def build(use_existing_data: false)
+      GC.config(rgengc_allow_full_mark: false)  # Minimize GC while user is waiting for build
+
       context.logger.log_timing("Building", "Build completed") do
         with_project_load_path do
           context.output_dir.mkdir unless context.output_dir.exist?
@@ -98,6 +100,13 @@ module Superfluous
           end
         end
       end
+
+      Thread.new do
+        sleep 0.3  # Give page reload time to finish
+        GC.start(full_mark: true, immediate_mark: true, immediate_sweep: true)
+      end
+    ensure
+      GC.config(rgengc_allow_full_mark: true)
     end
 
     def read_data
