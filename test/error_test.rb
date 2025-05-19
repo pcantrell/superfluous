@@ -21,7 +21,7 @@ class ErrorTest < SuperfluousTest
         EOF
       },
       exception: SyntaxError,
-      expected_message: "《src_dir》/presentation/syntax_error.superf:4: syntax error,",
+      expected_message: "《src_dir》/presentation/syntax_error.superf:4: syntax error",
     )
   end
 
