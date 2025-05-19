@@ -82,31 +82,24 @@ module Superfluous
     end
 
     def build(use_existing_data: false)
-      GC.config(rgengc_allow_full_mark: false)  # Minimize GC while user is waiting for build
+      Superfluous.with_delayed_gc do
+        context.logger.log_timing("Building", "Build completed") do
+          with_project_load_path do
+            context.output_dir.mkdir unless context.output_dir.exist?
 
-      context.logger.log_timing("Building", "Build completed") do
-        with_project_load_path do
-          context.output_dir.mkdir unless context.output_dir.exist?
+            if use_existing_data && @data
+              context.logger.log("Using existing data")
+            else
+              read_data
+            end
 
-          if use_existing_data && @data
-            context.logger.log("Using existing data")
-          else
-            read_data
-          end
-
-          context.logger.log_timing("Applying presentation", "Presentation applied") do
-            Presentation::Builder.new(context:)
-              .build_clean(data: @data, output_dir: context.output_dir)
+            context.logger.log_timing("Applying presentation", "Presentation applied") do
+              Presentation::Builder.new(context:)
+                .build_clean(data: @data, output_dir: context.output_dir)
+            end
           end
         end
       end
-
-      Thread.new do
-        sleep 0.3  # Give page reload time to finish
-        GC.start(full_mark: true, immediate_mark: true, immediate_sweep: true)
-      end
-    ensure
-      GC.config(rgengc_allow_full_mark: true)
     end
 
     def read_data
@@ -161,5 +154,26 @@ module Superfluous
 
   def self.is_dir_script?(pathname)
     pathname.basename.to_s =~ /^_.*\.rb$/
+  end
+
+  # Performs the given task with minimal garbage collection, performing an aggressive delayed GC
+  # after a short delay with the task finishes.
+  #
+  def self.with_delayed_gc(&task)
+    @latest_gc_req_id = nil  # Stop existing delayed GC requests
+    GC.config(rgengc_allow_full_mark: false)
+
+    yield
+
+  ensure
+    GC.config(rgengc_allow_full_mark: true)
+
+    @latest_gc_req_id = gc_req_id = rand
+    Thread.new do
+      sleep 0.3  # Give page reload time to finish
+      if @latest_gc_req_id == gc_req_id  # Don’t let delayed GC requests dogpile
+        GC.start(full_mark: true, immediate_mark: true, immediate_sweep: true)
+      end
+    end
   end
 end
